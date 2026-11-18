@@ -1,0 +1,25 @@
+{
+  "items": [
+    {
+      "game_id": "ng_provider",
+      "game_key": "https://ouisync.net/r#AwEg_h0QVG-0VinnxFNkd_nd4_iK_tiVNO5v4b8U3-XgIJ0g059WEZ8yaS8sgFuoEL7EOFUP2NQE4iNH7ib-_-aPjxQ?name=ng_provider",
+      "title_en": "NG-Provider",
+      "title_de": "NG-Provider",
+      "release_year": "2026",
+      "publisher": "NG",
+      "size_gb": 0.2,
+      "readme_en": "A cross Platform Provider",
+      "readme_de": "A cross Platform Provider",
+      "max_players": "1",
+      "master_required": false,
+      "version": "20261108",
+      "visible_in_gamelist": false,
+      "sync_enabled": true,
+      "is_game_provider": true,
+      "game_provider_type": "ouisync",
+      "has_game_db": false,
+      "packed_image_path": "",
+      "packed_image_password": ""
+    }
+  ]
+}

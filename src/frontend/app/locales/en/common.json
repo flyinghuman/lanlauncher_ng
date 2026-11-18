@@ -1,0 +1,12 @@
+{
+  "app": {
+    "title": "LANLauncherNG",
+    "language": "Language",
+    "settings": "Settings",
+    "catalog": "Catalog"
+  },
+  "status": {
+    "ready": "Ready",
+    "syncing": "Syncing..."
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://foss-gameindex.github.io/opensourcegameindex/schema/v1/llng-game-metadata.schema.json",
+  "title": "Portable OpenSourceGameIndex game metadata with LLNG fields",
+  "description": "Metadata stored as <game>/metadata.json or <game>/.ouisync/metadata.json. Unknown OpenSourceGameIndex fields are preserved for forward compatibility.",
+  "type": "object",
+  "properties": {
+    "game_id": { "type": "string", "pattern": "^[A-Za-z0-9._-]{1,128}$" },
+    "title": { "$ref": "#/$defs/localizedText" },
+    "name": { "type": "string" },
+    "description": { "$ref": "#/$defs/localizedText" },
+    "readme": { "$ref": "#/$defs/localizedText" },
+    "genre": { "$ref": "#/$defs/localizedText" },
+    "category": { "$ref": "#/$defs/localizedText" },
+    "runner": { "type": "string", "enum": ["", "wine", "proton", "proton-ge", "native", "auto", "windows"] },
+    "image": { "$ref": "#/$defs/relativeMediaPath" },
+    "image_path": { "$ref": "#/$defs/relativeMediaPath" },
+    "video": { "$ref": "#/$defs/relativeMediaPath" },
+    "video_path": { "$ref": "#/$defs/relativeMediaPath" },
+    "media": {
+      "type": "object",
+      "properties": {
+        "image": { "$ref": "#/$defs/relativeMediaPath" },
+        "video": { "$ref": "#/$defs/relativeMediaPath" }
+      },
+      "additionalProperties": true
+    },
+    "game_start": { "$ref": "#/$defs/gameStart" },
+    "start": { "$ref": "#/$defs/gameStart" },
+    "game_start_file": { "$ref": "#/$defs/safeRelativePath" },
+    "installer_tasks": { "$ref": "#/$defs/taskCollection" },
+    "installer": { "$ref": "#/$defs/taskCollection" },
+    "script": { "$ref": "#/$defs/taskCollection" },
+    "distribution": { "$ref": "#/$defs/distribution" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "localizedText": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "properties": {
+            "en": { "type": "string" },
+            "de": { "type": "string" },
+            "fr": { "type": "string" },
+            "en_US": { "type": "string" },
+            "de_DE": { "type": "string" }
+          },
+          "additionalProperties": true
+        }
+      ]
+    },
+    "safeRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        { "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000]+$" },
+        { "not": { "pattern": "\\\\" } }
+      ]
+    },
+    "relativeMediaPath": {
+      "$ref": "#/$defs/safeRelativePath"
+    },
+    "gameStart": {
+      "type": "object",
+      "properties": {
+        "file": { "$ref": "#/$defs/safeRelativePath" },
+        "args": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "taskCollection": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": { "type": "object", "additionalProperties": true }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "tasks": {
+              "type": "array",
+              "items": { "type": "object", "additionalProperties": true }
+            }
+          },
+          "additionalProperties": true
+        }
+      ]
+    },
+    "distribution": {
+      "type": "object",
+      "properties": {
+        "schema_version": { "const": 1 },
+        "archive": { "$ref": "#/$defs/archive" }
+      },
+      "additionalProperties": true
+    },
+    "archive": {
+      "type": "object",
+      "properties": {
+        "file": { "$ref": "#/$defs/archivePath" },
+        "path": { "$ref": "#/$defs/archivePath" },
+        "format": { "type": "string", "enum": ["eti", "rar", "tar.gz"] },
+        "sha256": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" }
+      },
+      "anyOf": [
+        { "required": ["file"] },
+        { "required": ["path"] }
+      ],
+      "additionalProperties": true
+    },
+    "archivePath": {
+      "allOf": [
+        { "$ref": "#/$defs/safeRelativePath" },
+        { "pattern": "\\.([Ee][Tt][Ii]|[Rr][Aa][Rr]|[Tt][Aa][Rr]\\.[Gg][Zz])$" }
+      ]
+    }
+  }
+}

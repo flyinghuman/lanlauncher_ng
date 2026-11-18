@@ -1,0 +1,30 @@
+.venv/
+.venv-dev-win/
+.venv-runtime/
+.venv-runtime-win/
+.venv-runtime-lin/
+.env
+/ng_provider/
+site/
+__pycache__/
+*.pyc
+old/
+/dist/
+data/sync/
+secrets/llng-update-private.pem
+/LANPage/
+vendor/bin/linux-x64/rslsync
+vendor/bin/windows-amd64/btsync.exe
+vendor/licenses/resilio/*.btskey
+
+# Local AI-agent guidance and repository-specific Codex skills.
+/AGENTS.md
+/.agents/
+/.ruff_cache/
+/context.md
+/TODO.md
+data/
+dist/releases/
+/.codex
+# Local changelog is maintained outside Git.
+changelog.md

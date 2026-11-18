@@ -1,0 +1,76 @@
+{
+  "tools": [
+    {
+      "name": "python-runtime",
+      "platform": "windows-amd64",
+      "path": "vendor/bin/windows-amd64/python/python.exe",
+      "version": "3.14.0",
+      "sha256": "467014615a5255aca450ae88100dd2caf887da87657f00e3c2171ec44a685aec",
+      "license_file": "vendor/licenses/python/LICENSE.txt",
+      "required": true,
+      "notes": "Bundled embedded CPython runtime for packaged Windows launcher startup"
+    },
+    {
+      "name": "unrar",
+      "platform": "windows-amd64",
+      "path": "vendor/bin/windows-amd64/unrar.exe",
+      "version": "7.11.0",
+      "sha256": "e76fe4cbd4d0ec8d78bc05b03f6c159f36fd6cac26c3002373bf380b069949d8",
+      "license_file": "vendor/licenses/unrar/LICENSE.txt",
+      "required": true,
+      "notes": "Used for extracting <game_id>.eti archives during install/update"
+    },
+    {
+      "name": "ouisync",
+      "platform": "windows-amd64",
+      "path": "vendor/bin/windows-amd64/ouisync.exe",
+      "version": "0.10.2+llng.1",
+      "sha256": "32ec5751ce64b5998522536fa8d197a44c6eebb9df4e3a15bacc2b1cc2a82a24",
+      "license_file": "vendor/licenses/ouisync/MPL-2.0.txt",
+      "required": true,
+      "notes": "Ouisync 0.10.2 CLI with the LLNG reused-leaf-node fix (source patch: vendor/licenses/ouisync/LLNG-MODIFICATIONS.patch) and Dokan VFS mount support; requires the bundled Dokan 2.3 driver installer on Windows"
+    },
+    {
+      "name": "dokan2-runtime",
+      "platform": "windows-amd64",
+      "path": "vendor/bin/windows-amd64/dokan2.dll",
+      "version": "2.3.0.1000",
+      "sha256": "a95b224aeb71a74fb17cd9f7cbad7005aa478831ada2507e21c4e52f84c89ee2",
+      "license_file": "vendor/licenses/ouisync/dokany-LGPL-3.0.txt",
+      "required": true,
+      "notes": "Dokan user-mode library built from the pinned upstream source for Ouisync VFS"
+    },
+    {
+      "name": "dokan2-driver-installer",
+      "platform": "windows-amd64",
+      "path": "vendor/bin/windows-amd64/Dokan_x64.msi",
+      "version": "2.3.0.1000",
+      "sha256": "1aec3fda5497ea3e4847c8e033a2834c720fa69b5e1c060b6a4d32d0199e8e29",
+      "license_file": "vendor/licenses/ouisync/dokany-LGPL-3.0.txt",
+      "required": true,
+      "notes": "Official Dokany x64 installer; installs the persistent kernel driver needed by temporary Ouisync mounts and requires administrator privileges"
+    },
+    {
+      "name": "vcruntime140",
+      "platform": "windows-amd64",
+      "path": "vendor/bin/windows-amd64/vcruntime140.dll",
+      "version": "14.x (from bundled CPython 3.14.0 runtime)",
+      "sha256": "052ad6a20d375957e82aa6a3c441ea548d89be0981516ca7eb306e063d5027f4",
+      "license_file": "vendor/licenses/python/LICENSE.txt",
+      "required": true,
+      "notes": "Microsoft Visual C++ runtime required by the VFS-enabled Ouisync CLI and Dokan DLL; redistributed under the bundled CPython runtime terms"
+    },
+    {
+      "name": "ouisync",
+      "platform": "linux-x64",
+      "path": "vendor/bin/linux-x64/ouisync",
+      "version": "0.10.2+llng.1",
+      "sha256": "c8ecee5844137bfec0e8df369e516e31e9681f56916cd8da35de0743153629a0",
+      "license_file": "vendor/licenses/ouisync/MPL-2.0.txt",
+      "required": true,
+      "notes": "Ouisync 0.10.2 CLI with the LLNG reused-leaf-node fix (source patch: vendor/licenses/ouisync/LLNG-MODIFICATIONS.patch); FUSE VFS support; requires glibc 2.39 or newer and access to /dev/fuse for temporary mounts"
+    }
+  ],
+  "notes": "Bundled runtime tools shipped with the package.",
+  "schema": "tools/manifest.schema.json"
+}

@@ -1,0 +1,15 @@
+**
+!vendor/
+!vendor/bin/
+!vendor/bin/linux-x64/
+!vendor/bin/linux-x64/ouisync
+!vendor/python/
+!vendor/python/ouisync/
+!vendor/python/ouisync/**
+!vendor/python/msgpack/
+!vendor/python/msgpack/**
+!ng_provider/
+!ng_provider/Dockerfile
+!ng_provider/ouisync-token-info.py
+**/__pycache__/
+*.pyc

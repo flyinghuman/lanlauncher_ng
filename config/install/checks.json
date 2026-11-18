@@ -1,0 +1,16 @@
+{
+  "games": {
+    "0ad": {
+      "markers": [
+        "binaries/system/pyrogenesis.exe",
+        "binaries/system/pyrogenesis"
+      ]
+    },
+    "supertuxkart": {
+      "markers": [
+        "run_game.bat",
+        "run_game.sh"
+      ]
+    }
+  }
+}

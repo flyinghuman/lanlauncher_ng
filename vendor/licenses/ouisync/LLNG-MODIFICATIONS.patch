@@ -1,0 +1,154 @@
+diff --git a/lib/src/store/block.rs b/lib/src/store/block.rs
+index 23ebf3ed..78986fdc 100644
+--- a/lib/src/store/block.rs
++++ b/lib/src/store/block.rs
+@@ -93,7 +93,6 @@ pub(super) async fn count(conn: &mut db::Connection) -> Result<u64, Error> {
+ }
+ 
+ /// Checks whether the block exists in the store.
+-#[cfg(test)]
+ pub(super) async fn exists(conn: &mut db::Connection, id: &BlockId) -> Result<bool, Error> {
+     Ok(sqlx::query("SELECT 0 FROM blocks WHERE id = ?")
+         .bind(id)
+diff --git a/lib/src/store/client.rs b/lib/src/store/client.rs
+index ec123575..86223736 100644
+--- a/lib/src/store/client.rs
++++ b/lib/src/store/client.rs
+@@ -139,8 +139,24 @@ impl ClientWriter {
+ 
+         let nodes = nodes.into_inner();
+         let mut new_block_offers = Vec::new();
++        let mut nodes_to_save = nodes.clone().into_missing();
++        let mut stored_block_ids = Vec::new();
+ 
+         for node in &nodes {
++            // Blocks that are already stored locally. This happens when an updated snapshot reuses
++            // unchanged blocks of a previous one (same locator, same content => same block id) and
++            // they share a leaf set with a changed block, so the leaf set gets a new parent hash
++            // and its unchanged leaves are received again. No offer is created for such blocks
++            // (they are not missing), so their new leaf nodes must be saved as present. Saving
++            // them as missing would leave them missing forever: the snapshot never becomes
++            // complete, the sync progress never reaches 100% and older snapshots are retained as
++            // fallback.
++            if block::exists(&mut self.db, &node.block_id).await? {
++                nodes_to_save.insert(node.locator, node.block_id, SingleBlockPresence::Present);
++                stored_block_ids.push(node.block_id);
++                continue;
++            }
++
+             // Create the block offer only if the block is `Missing` locally and `Present` or
+             // `Expired` remotely.
+             //
+@@ -174,10 +190,22 @@ impl ClientWriter {
+             };
+         }
+ 
+-        if leaf_node::save_all(&mut self.db, &nodes.into_missing(), &parent_hash).await? > 0 {
++        if leaf_node::save_all(&mut self.db, &nodes_to_save, &parent_hash).await? > 0 {
+             self.summary_updates.push(parent_hash);
+         }
+ 
++        // Repair leaf nodes that earlier versions saved as missing although their block is stored
++        // (see above). `set_present` only touches nodes not already marked present.
++        for block_id in &stored_block_ids {
++            let mut updates = leaf_node::set_present(&mut self.db, block_id);
++
++            while let Some(update) = updates.try_next().await? {
++                self.summary_updates.push(update.parent);
++                self.block_id_cache_updates
++                    .push((update.encoded_locator, *block_id));
++            }
++        }
++
+         Ok(LeafNodesStatus { new_block_offers })
+     }
+ 
+@@ -1049,4 +1077,88 @@ mod tests {
+             .unwrap();
+         assert_eq!(node.summary.state, NodeState::Approved);
+     }
++
++    // Receive a complete remote snapshot, then an updated one that adds a block to the same leaf
++    // set. The unchanged leaf (same locator and block id) is received again under a new parent.
++    // Its block is already stored, so it must be saved as present and the updated snapshot must
++    // become complete once only the new block is received.
++    #[tokio::test]
++    async fn receive_updated_snapshot_reusing_stored_block() {
++        let mut rng = StdRng::seed_from_u64(0);
++        let (_base_dir, pool) = db::create_temp().await.unwrap();
++        let store = Store::new(pool);
++        let secrets = WriteSecrets::generate(&mut rng);
++        let remote_id = PublicKey::generate(&mut rng);
++
++        let (old_locator, old_block): (Hash, Block) = rng.random();
++        let snapshot_v1 = Snapshot::from_present_blocks([(old_locator, old_block.clone())]);
++        let vv1 = VersionVector::first(remote_id);
++
++        SnapshotWriter::begin(&store, &snapshot_v1)
++            .await
++            .save_nodes(&secrets.write_keys, remote_id, vv1.clone())
++            .await
++            .save_blocks()
++            .await
++            .commit()
++            .await;
++
++        // Buckets are selected by the leading locator bytes, so changing only the last byte keeps
++        // the new locator in the same leaf set as the old one.
++        let mut new_locator: [u8; Hash::SIZE] = old_locator.into();
++        new_locator[Hash::SIZE - 1] ^= 1;
++        let new_locator = Hash::from(new_locator);
++        let new_block: Block = rng.random();
++        let new_block_id = new_block.id;
++
++        let snapshot_v2 = Snapshot::from_present_blocks([
++            (old_locator, old_block.clone()),
++            (new_locator, new_block.clone()),
++        ]);
++        let (leaf_parent, _) = snapshot_v2.leaf_sets().next().unwrap();
++        assert_eq!(snapshot_v2.leaf_sets().count(), 1);
++        assert!(snapshot_v1.get_leaf_set(leaf_parent).is_none());
++
++        SnapshotWriter::begin(&store, &snapshot_v2)
++            .await
++            .save_nodes(&secrets.write_keys, remote_id, vv1.incremented(remote_id))
++            .await
++            .commit()
++            .await;
++
++        let leaf_nodes = store
++            .acquire_read()
++            .await
++            .unwrap()
++            .load_leaf_nodes(leaf_parent)
++            .await
++            .unwrap();
++        assert_eq!(
++            leaf_nodes.get(&old_locator).unwrap().block_presence,
++            SingleBlockPresence::Present
++        );
++        assert_eq!(
++            leaf_nodes.get(&new_locator).unwrap().block_presence,
++            SingleBlockPresence::Missing
++        );
++
++        // Receive only the new block.
++        let mut writer = store.begin_client_write().await.unwrap();
++        writer.save_block(&new_block).await.unwrap();
++        writer.commit().await.unwrap();
++
++        let root_node = store
++            .acquire_read()
++            .await
++            .unwrap()
++            .load_latest_approved_root_node(&remote_id, RootNodeFilter::Any)
++            .await
++            .unwrap();
++        assert_eq!(root_node.proof.hash, *snapshot_v2.root_hash());
++        assert_eq!(root_node.summary.block_presence, MultiBlockPresence::Full);
++
++        let mut reader = store.acquire_read().await.unwrap();
++        let mut content = BlockContent::new();
++        reader.read_block(&new_block_id, &mut content).await.unwrap();
++    }
+ }

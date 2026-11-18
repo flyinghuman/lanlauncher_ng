@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LANLauncherNG Tool Manifest",
+  "type": "object",
+  "required": ["tools"],
+  "properties": {
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "platform", "path", "version", "sha256", "license_file", "required"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "platform": { "type": "string", "enum": ["windows-amd64", "linux-x64", "linux-amd64", "linux-arm64", "any"] },
+          "path": { "type": "string", "minLength": 1 },
+          "version": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+          "license_file": { "type": "string", "minLength": 1 },
+          "required": { "type": "boolean" },
+          "notes": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

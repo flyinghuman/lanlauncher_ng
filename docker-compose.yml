@@ -1,0 +1,12 @@
+services:
+  lanpage:
+    build:
+      context: ./packaging/lanpage
+    container_name: lanlauncherng-lanpage-dev
+    ports:
+      - "80:80"
+    volumes:
+      - ./LANPage:/var/www/html
+    environment:
+      APACHE_SERVER_NAME: launcher.lan
+    restart: unless-stopped

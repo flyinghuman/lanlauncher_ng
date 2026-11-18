@@ -1,0 +1,1436 @@
+<!doctype html>
+<html lang="de">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>LANLauncherNG</title>
+        <link
+            rel="icon"
+            type="image/x-icon"
+            href="/assets/icons/lanlauncherng.ico"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            href="/assets/icons/lanlauncherng.png"
+        />
+        <link rel="apple-touch-icon" href="/assets/icons/lanlauncherng.png" />
+        <link rel="manifest" href="/app/manifest.webmanifest" />
+        <link rel="stylesheet" href="/styles/main.css" />
+    </head>
+    <body>
+        <div class="bg-orb bg-orb-a" aria-hidden="true"></div>
+        <div class="bg-orb bg-orb-b" aria-hidden="true"></div>
+
+        <header class="topbar">
+            <div class="brand-wrap">
+                <h1 id="app-title">LANLauncherNG</h1>
+                <p id="app-subtitle">Cross-platform LAN game launcher</p>
+            </div>
+            <div class="top-actions">
+                <button
+                    id="top-traffic-toggle"
+                    type="button"
+                    class="top-traffic-toggle"
+                >
+                    <svg
+                        id="top-traffic-chart"
+                        class="top-traffic-chart"
+                        viewBox="0 0 320 32"
+                        preserveAspectRatio="none"
+                        role="img"
+                        aria-hidden="true"
+                    ></svg>
+                    <div
+                        id="top-traffic-info"
+                        class="top-traffic-info"
+                        aria-hidden="true"
+                    >
+                        <span
+                            id="top-traffic-info-hint"
+                            class="top-traffic-info-hint"
+                        ></span>
+                        <span class="top-traffic-info-row">
+                            <span
+                                class="top-traffic-info-swatch top-traffic-info-swatch-download"
+                            ></span>
+                            <span
+                                id="top-traffic-info-download-label"
+                                class="top-traffic-info-label"
+                            ></span>
+                            <strong
+                                id="top-traffic-info-download-value"
+                                class="top-traffic-info-value"
+                            ></strong>
+                        </span>
+                        <span class="top-traffic-info-row">
+                            <span
+                                class="top-traffic-info-swatch top-traffic-info-swatch-upload"
+                            ></span>
+                            <span
+                                id="top-traffic-info-upload-label"
+                                class="top-traffic-info-label"
+                            ></span>
+                            <strong
+                                id="top-traffic-info-upload-value"
+                                class="top-traffic-info-value"
+                            ></strong>
+                        </span>
+                        <span class="top-traffic-info-row">
+                            <span
+                                class="top-traffic-info-swatch top-traffic-info-swatch-disk-read"
+                            ></span>
+                            <span
+                                id="top-traffic-info-disk-read-label"
+                                class="top-traffic-info-label"
+                            ></span>
+                            <strong
+                                id="top-traffic-info-disk-read-value"
+                                class="top-traffic-info-value"
+                            ></strong>
+                        </span>
+                        <span class="top-traffic-info-row">
+                            <span
+                                class="top-traffic-info-swatch top-traffic-info-swatch-disk-write"
+                            ></span>
+                            <span
+                                id="top-traffic-info-disk-write-label"
+                                class="top-traffic-info-label"
+                            ></span>
+                            <strong
+                                id="top-traffic-info-disk-write-value"
+                                class="top-traffic-info-value"
+                            ></strong>
+                        </span>
+                    </div>
+                </button>
+                <div
+                    id="top-provider-badges"
+                    class="top-provider-badges"
+                    aria-label="Sync provider status"
+                ></div>
+                <button
+                    id="top-help-docs"
+                    type="button"
+                    class="top-help-docs"
+                    aria-label="Open local documentation"
+                    title="Open local documentation"
+                >
+                    ?
+                </button>
+                <select id="top-links-select" aria-label="LAN links">
+                    <option value="">LAN Links</option>
+                </select>
+                <label
+                    class="label-inline"
+                    for="locale-select"
+                    id="label-language"
+                    >Language</label
+                >
+                <select id="locale-select" aria-label="Language selector">
+                    <option value="en">English</option>
+                    <option value="de">Deutsch</option>
+                </select>
+                <span id="top-update-hint" class="top-update-hint" hidden>
+                    Restart to install update
+                </span>
+                <button id="stop-app-btn" type="button">Stop App</button>
+            </div>
+        </header>
+
+        <nav class="app-tabs" aria-label="Primary sections">
+            <button
+                id="tab-home-btn"
+                type="button"
+                class="app-tab is-active"
+                data-tab="home"
+            >
+                Home
+            </button>
+            <button
+                id="tab-status-btn"
+                type="button"
+                class="app-tab"
+                data-tab="status"
+            >
+                Status
+            </button>
+            <button
+                id="tab-providers-btn"
+                type="button"
+                class="app-tab"
+                data-tab="providers"
+            >
+                Provider UIs
+            </button>
+            <button
+                id="tab-settings-btn"
+                type="button"
+                class="app-tab"
+                data-tab="settings"
+            >
+                Settings
+            </button>
+            <button
+                id="tab-logs-btn"
+                type="button"
+                class="app-tab"
+                data-tab="logs"
+            >
+                Logs
+            </button>
+        </nav>
+
+        <main id="home-panel" class="layout tab-panel" data-tab-panel="home">
+            <section
+                class="panel panel-catalog"
+                aria-labelledby="catalog-title"
+            >
+                <div class="panel-head">
+                    <h2 id="catalog-title">Catalog</h2>
+                    <div class="sync-block" aria-live="polite">
+                        <span id="sync-state">sync: unknown</span>
+                        <span id="sync-speed">dl 0 KB/s | ul 0 KB/s | disk 0 KB/s</span>
+                    </div>
+                </div>
+
+                <div class="filters" role="search">
+                    <input
+                        id="search-input"
+                        type="search"
+                        placeholder="Search games"
+                        aria-label="Search games"
+                    />
+
+                    <select id="sort-select" aria-label="Sort games">
+                        <option value="title:asc">Title A-Z</option>
+                        <option value="title:desc">Title Z-A</option>
+                        <option value="version:desc">Newest update date</option>
+                        <option value="size:desc">Largest first</option>
+                        <option value="players:desc">Most players</option>
+                        <option value="sync_progress:asc">
+                            Sync Progress 0-100%
+                        </option>
+                        <option value="sync_progress:desc">
+                            Sync Progress 100-0%
+                        </option>
+                    </select>
+
+                    <select
+                        id="installed-select"
+                        aria-label="Filter by installation state"
+                    >
+                        <option value="all">All</option>
+                        <option value="installed">Installed</option>
+                        <option value="missing">Missing</option>
+                        <option value="downloading">Downloading</option>
+                        <option value="updates">Updates Available</option>
+                        <option value="hidden">Hidden</option>
+                    </select>
+                    <select id="genre-select" aria-label="Filter by genre">
+                        <option value="all">All genres</option>
+                    </select>
+
+                    <button id="rescan-btn" type="button">Rescan</button>
+                    <label
+                        class="label-inline"
+                        for="grid-size-select"
+                        id="label-grid-size"
+                        >Tile size</label
+                    >
+                    <select
+                        id="grid-size-select"
+                        aria-label="Tile size"
+                    >
+                        <option value="very_small">Very small</option>
+                        <option value="small">Small</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="big">Big</option>
+                        <option value="very_big">Very big</option>
+                    </select>
+                    <div
+                        class="view-toggle"
+                        role="group"
+                        aria-label="View mode"
+                    >
+                        <button id="view-list-btn" type="button">List</button>
+                        <button id="view-grid-btn" type="button">Grid</button>
+                    </div>
+                </div>
+
+                <ul
+                    id="game-list"
+                    class="game-list"
+                    aria-label="Game list"
+                ></ul>
+                <div
+                    id="catalog-context-menu"
+                    class="catalog-context-menu"
+                    role="menu"
+                    hidden
+                ></div>
+            </section>
+
+            <aside class="panel panel-detail" aria-labelledby="detail-title">
+                <h2 id="detail-title">Game Detail</h2>
+
+                <div id="detail-empty" class="empty-state">
+                    Select a game to view details.
+                </div>
+
+                <article id="detail-card" class="detail-card" hidden>
+                    <div class="detail-split">
+                        <div class="detail-media">
+                            <video
+                                id="detail-video"
+                                class="detail-image"
+                                controls
+                                autoplay
+                                muted
+                                loop
+                                playsinline
+                                preload="metadata"
+                                hidden
+                            ></video>
+                            <img
+                                id="detail-image"
+                                class="detail-image"
+                                alt="Game artwork"
+                            />
+                        </div>
+                        <div class="detail-text">
+                            <div class="detail-title-row">
+                                <h3 id="detail-game-title"></h3>
+                                <span
+                                    id="detail-installing-badge"
+                                    class="installing-badge"
+                                    hidden
+                                >
+                                    <span
+                                        class="inline-spinner"
+                                        aria-hidden="true"
+                                    ></span>
+                                    <span class="installing-label"
+                                        >Installing</span
+                                    >
+                                </span>
+                            </div>
+                            <span
+                                id="detail-downloading-badge"
+                                class="downloading-badge"
+                                hidden
+                                >Downloading</span
+                            >
+                            <span
+                                id="detail-syncing-badge"
+                                class="downloading-badge"
+                                hidden
+                                >Syncing</span
+                            >
+                            <span
+                                id="detail-fully-synced-badge"
+                                class="up-to-date-badge"
+                                hidden
+                                >Fully synced</span
+                            >
+                            <span
+                                id="detail-update-badge"
+                                class="update-badge"
+                                hidden
+                                >Update available</span
+                            >
+                            <span
+                                id="detail-up-to-date-badge"
+                                class="up-to-date-badge"
+                                hidden
+                                >Up to date</span
+                            >
+                            <span
+                                id="detail-provider-badge"
+                                class="provider-detail-badge"
+                                hidden
+                                >Provider: Resilio</span
+                            >
+                            <p id="detail-genre"></p>
+                            <div
+                                id="detail-meta"
+                                class="detail-meta-badges"
+                            ></div>
+                            <div
+                                id="detail-download-progress"
+                                class="detail-download-progress"
+                                hidden
+                            >
+                                <div class="detail-download-progress-row">
+                                    <span id="detail-download-progress-label"
+                                        >Sync progress</span
+                                    >
+                                    <strong id="detail-download-progress-value"
+                                        >0%</strong
+                                    >
+                                </div>
+                                <div
+                                    id="detail-download-progress-track"
+                                    class="detail-download-progress-track"
+                                    role="progressbar"
+                                    aria-label="Sync progress"
+                                    aria-valuemin="0"
+                                    aria-valuemax="100"
+                                    aria-valuenow="0"
+                                >
+                                    <div
+                                        id="detail-download-progress-fill"
+                                        class="detail-download-progress-fill"
+                                    ></div>
+                                </div>
+                            </div>
+                            <div id="detail-links" class="detail-links" hidden>
+                                <h4 id="detail-links-title">Links</h4>
+                                <div
+                                    id="detail-links-list"
+                                    class="detail-links-list"
+                                ></div>
+                            </div>
+                            <p id="detail-readme"></p>
+                        </div>
+                    </div>
+
+                    <div class="detail-actions">
+                        <button id="sync-start" type="button">
+                            Start Sync
+                        </button>
+                        <button id="sync-stop" type="button">Stop Sync</button>
+                        <button id="sync-remove-data" type="button" hidden>
+                            Remove downloaded data
+                        </button>
+                        <button id="open-library" type="button">
+                            Open Library Folder
+                        </button>
+                        <button id="open-game-folder" type="button">
+                            Open Game Folder
+                        </button>
+                        <button id="install-anyway-btn" type="button" hidden>
+                            Install Anyway
+                        </button>
+                        <button id="edit-local-game-btn" type="button" hidden>
+                            Edit Local Game
+                        </button>
+                        <button id="start-game-btn" type="button">
+                            Start Game
+                        </button>
+                        <button id="start-server-btn" type="button" hidden>
+                            Start Server
+                        </button>
+                        <button id="delete-game-btn" type="button">
+                            Delete Game
+                        </button>
+                        <div class="detail-runtime-row">
+                            <label
+                                id="label-detail-linux-runtime"
+                                for="detail-linux-runtime-select"
+                                hidden
+                            >
+                                Runtime for this game
+                            </label>
+                            <select id="detail-linux-runtime-select" hidden>
+                                <option value="">Use global runtime</option>
+                                <option value="native">Native preferred</option>
+                                <option value="wine">Wine</option>
+                                <option value="proton">Proton</option>
+                                <option value="proton-ge">Proton GE</option>
+                            </select>
+                            <label
+                                id="label-detail-linux-leave-terminal-open"
+                                class="checkbox-inline"
+                                hidden
+                            >
+                                <input
+                                    id="detail-linux-leave-terminal-open-checkbox"
+                                    type="checkbox"
+                                />
+                                <span
+                                    id="label-detail-linux-leave-terminal-open-inline"
+                                >
+                                    Leave terminal open after start
+                                </span>
+                            </label>
+                            <button
+                                id="install-proton-common-deps-btn"
+                                type="button"
+                                hidden
+                            >
+                                Install Common Proton Dependencies
+                            </button>
+                            <div
+                                id="detail-winetricks-panel"
+                                class="detail-winetricks-panel"
+                                hidden
+                            >
+                                <div class="detail-winetricks-head">
+                                    <strong id="detail-winetricks-title"
+                                        >Prefix Dependencies</strong
+                                    >
+                                    <span id="detail-winetricks-note"
+                                        >Select packages to install into this
+                                        game prefix. Removal opens the prefix
+                                        uninstaller.</span
+                                    >
+                                </div>
+                                <div class="detail-winetricks-toolbar">
+                                    <button
+                                        id="detail-winetricks-select-common"
+                                        type="button"
+                                    >
+                                        Select Common
+                                    </button>
+                                    <button
+                                        id="detail-winetricks-select-all"
+                                        type="button"
+                                    >
+                                        Select All
+                                    </button>
+                                    <button
+                                        id="detail-winetricks-select-none"
+                                        type="button"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                                <div
+                                    id="detail-winetricks-packages"
+                                    class="detail-winetricks-packages"
+                                ></div>
+                                <div class="detail-winetricks-actions">
+                                    <button
+                                        id="detail-winetricks-save-btn"
+                                        type="button"
+                                    >
+                                        Save current dependency config
+                                    </button>
+                                    <button
+                                        id="detail-winetricks-install-btn"
+                                        type="button"
+                                    >
+                                        Install Selected
+                                    </button>
+                                    <button
+                                        id="detail-winetricks-remove-btn"
+                                        type="button"
+                                    >
+                                        Open Prefix Uninstaller
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <p
+                            id="detail-local-note"
+                            class="detail-local-note"
+                            hidden
+                        ></p>
+                    </div>
+                    <pre id="start-game-console" class="launch-console"></pre>
+                </article>
+            </aside>
+        </main>
+
+        <section
+            id="status-panel"
+            class="panel status-panel tab-panel"
+            data-tab-panel="status"
+            hidden
+            aria-labelledby="status-title"
+        >
+            <div class="status-panel-head">
+                <div>
+                    <h2 id="status-title">Status</h2>
+                    <p id="status-description" class="panel-description">
+                        Overall sync health, provider details, and live metrics.
+                    </p>
+                </div>
+            </div>
+            <div id="status-overview" class="status-overview"></div>
+            <div class="status-provider-section">
+                <div class="status-provider-head">
+                    <h3 id="status-providers-title">Provider details</h3>
+                    <p id="status-providers-description" class="panel-description">
+                        Current state, process IDs, and errors for each sync provider.
+                    </p>
+                </div>
+                <div
+                    id="status-provider-list"
+                    class="status-provider-list"
+                    aria-live="polite"
+                ></div>
+            </div>
+        </section>
+
+        <section
+            id="providers-panel"
+            class="panel tab-panel provider-panel"
+            data-tab-panel="providers"
+            hidden
+            aria-labelledby="providers-title"
+        >
+            <div class="provider-panel-head">
+                <div>
+                    <h2 id="providers-title">Provider UIs</h2>
+                    <p id="providers-description" class="panel-description">
+                        Embedded provider consoles and fallback links for sync
+                        backends.
+                    </p>
+                </div>
+                <div class="provider-panel-actions">
+                    <button id="provider-open-external-btn" type="button">
+                        Open Provider Externally
+                    </button>
+                </div>
+            </div>
+            <div class="provider-tabs" role="tablist" aria-label="Providers">
+                <button
+                    id="provider-tab-ouisync-btn"
+                    type="button"
+                    class="provider-tab is-active"
+                    data-provider-tab="ouisync"
+                >
+                    Ouisync
+                </button>
+                <button
+                    id="provider-tab-resilio-btn"
+                    type="button"
+                    class="provider-tab"
+                    data-provider-tab="resilio"
+                >
+                    Resilio
+                </button>
+            </div>
+            <div class="provider-frame-shell">
+                <section id="ouisync-native-panel" class="ouisync-native-panel" hidden>
+                    <p id="ouisync-inventory-status" class="provider-frame-status" aria-live="polite"></p>
+                    <section class="ouisync-health-card" aria-labelledby="ouisync-health-title">
+                        <h3 id="ouisync-health-title">Ouisync status</h3>
+                        <div id="ouisync-health-summary" class="ouisync-health-summary" aria-live="polite"></div>
+                        <div class="ouisync-debug-actions">
+                            <button id="ouisync-debug-health" type="button">Check Ouisync</button>
+                            <button id="ouisync-debug-seed" type="button">Check ng_provider</button>
+                            <button id="ouisync-reset-seed" type="button">Reset and reconnect ng_provider</button>
+                        </div>
+                    </section>
+                    <div class="ouisync-inventory-grid">
+                        <section class="ouisync-inventory-card" aria-labelledby="ouisync-catalog-title">
+                            <h3 id="ouisync-catalog-title">Open Source Game Index</h3>
+                            <ul id="ouisync-catalog-list" class="ouisync-catalog-list"></ul>
+                        </section>
+                        <section class="ouisync-inventory-card" aria-labelledby="ouisync-repositories-title">
+                            <h3 id="ouisync-repositories-title">Repositories</h3>
+                            <div class="ouisync-table-wrap">
+                                <table class="ouisync-repository-table">
+                                    <thead><tr>
+                                        <th id="ouisync-th-repository">Repository</th><th id="ouisync-th-peers">Peers</th><th id="ouisync-th-local">Local</th><th id="ouisync-th-size">Repo size</th><th id="ouisync-th-download">Download</th><th id="ouisync-th-upload">Upload</th>
+                                    </tr></thead>
+                                    <tbody id="ouisync-repository-list"></tbody>
+                                </table>
+                            </div>
+                        </section>
+                        <section class="ouisync-inventory-card ouisync-settings-card" aria-labelledby="ouisync-settings-title">
+                            <h3 id="ouisync-settings-title">Repository settings</h3>
+                            <p id="ouisync-settings-repository" class="ouisync-settings-repository"></p>
+                            <label class="ouisync-setting-row"><input id="ouisync-setting-dht" type="checkbox" disabled><span id="ouisync-setting-dht-label">DHT</span></label>
+                            <label class="ouisync-setting-row"><input id="ouisync-setting-pex" type="checkbox" disabled><span id="ouisync-setting-pex-label">Peer Exchange</span></label>
+                            <label class="ouisync-setting-row"><input id="ouisync-setting-cache" type="checkbox" disabled><span id="ouisync-setting-cache-label">Use Cache Servers</span></label>
+                            <p id="ouisync-settings-hint" class="ouisync-settings-hint" aria-live="polite"></p>
+                            <hr>
+                            <h4 id="ouisync-mount-title">Read-only mount</h4>
+                            <p id="ouisync-mount-status" class="ouisync-settings-hint" aria-live="polite"></p>
+                            <div class="ouisync-mount-actions">
+                                <button id="ouisync-mount-start" type="button" disabled>Mount</button>
+                                <button id="ouisync-mount-stop" type="button" disabled>Unmount</button>
+                                <button id="ouisync-mount-force-stop" type="button" disabled>Force unmount</button>
+                            </div>
+                            <hr>
+                            <label class="ouisync-copy-target-label" for="ouisync-copy-target">Copy destination directory</label>
+                            <input id="ouisync-copy-target" type="text" value="." spellcheck="false">
+                            <p id="ouisync-copy-status" class="ouisync-settings-hint" aria-live="polite"></p>
+                        </section>
+                        <section id="ouisync-peers-card" class="ouisync-inventory-card ouisync-peers-card" aria-labelledby="ouisync-peers-title" hidden>
+                            <h3 id="ouisync-peers-title">Peers</h3>
+                            <p id="ouisync-peers-hint" class="ouisync-settings-hint"></p>
+                            <div class="ouisync-table-wrap">
+                                <table class="ouisync-repository-table ouisync-peer-table">
+                                    <thead><tr>
+                                        <th id="ouisync-peer-th-address">Address</th><th id="ouisync-peer-th-source">Source</th><th id="ouisync-peer-th-state">State</th><th id="ouisync-peer-th-download">Download</th><th id="ouisync-peer-th-upload">Upload</th><th id="ouisync-peer-th-received">Received</th><th id="ouisync-peer-th-sent">Sent</th><th></th>
+                                    </tr></thead>
+                                    <tbody id="ouisync-peer-list"></tbody>
+                                </table>
+                            </div>
+                            <p id="ouisync-peer-listeners" class="ouisync-settings-hint"></p>
+                            <form id="ouisync-peer-add-form" class="ouisync-peer-add">
+                                <label id="ouisync-peer-add-label" for="ouisync-peer-add-input">Add peer manually</label>
+                                <div class="ouisync-peer-add-row">
+                                    <input id="ouisync-peer-add-input" type="text" spellcheck="false" autocomplete="off" placeholder="192.168.1.20:20209">
+                                    <button id="ouisync-peer-add-button" type="submit">Add</button>
+                                </div>
+                            </form>
+                            <p id="ouisync-peer-status" class="ouisync-settings-hint" aria-live="polite"></p>
+                        </section>
+                        <section class="ouisync-inventory-card ouisync-directory-card" aria-labelledby="ouisync-directory-title">
+                            <div class="ouisync-directory-head">
+                                <button id="ouisync-directory-up" class="ouisync-directory-up" type="button" disabled aria-label="Up" title="Up">↑</button>
+                                <h3 id="ouisync-directory-title">Repository contents</h3>
+                            </div>
+                            <p id="ouisync-directory-path" class="ouisync-directory-path">/</p>
+                            <ul id="ouisync-directory-list" class="ouisync-directory-list"></ul>
+                        </section>
+                    </div>
+                </section>
+                <div id="provider-frame-status" class="provider-frame-status">
+                    Embedded view below. If the provider blocks iframe
+                    embedding, use the external open button.
+                </div>
+                <iframe
+                    id="provider-iframe"
+                    class="provider-iframe"
+                    title="Sync provider interface"
+                    loading="lazy"
+                    referrerpolicy="no-referrer"
+                ></iframe>
+            </div>
+        </section>
+        <dialog id="ouisync-debug-modal" class="ouisync-debug-modal" aria-labelledby="ouisync-debug-modal-title">
+            <div class="ouisync-debug-modal-head">
+                <h2 id="ouisync-debug-modal-title">Ouisync diagnostics</h2>
+                <button id="ouisync-debug-modal-close" type="button" aria-label="Close">×</button>
+            </div>
+            <pre id="ouisync-debug-log" class="ouisync-debug-log" aria-live="polite"></pre>
+        </dialog>
+
+        <section
+            id="settings-panel"
+            class="panel settings-panel settings tab-panel"
+            data-tab-panel="settings"
+            hidden
+            aria-labelledby="settings-title"
+        >
+            <div class="settings-head">
+                <h2 id="settings-title">Settings</h2>
+            </div>
+
+            <div id="settings-body">
+                <section
+                    id="settings-section-general"
+                    class="settings-group"
+                    aria-labelledby="settings-section-general-title"
+                >
+                    <h4 id="settings-section-general-title">General</h4>
+                    <p class="settings-version">
+                        <strong id="label-app-version">Version</strong>:
+                        <span id="app-version-value">-</span>
+                    </p>
+
+                    <div class="settings-field">
+                        <label for="nickname-input" id="label-nickname"
+                            >Nickname</label
+                        >
+                        <input
+                            id="nickname-input"
+                            type="text"
+                            maxlength="32"
+                            placeholder="Player name"
+                        />
+                    </div>
+
+                    <div class="settings-field">
+                        <label for="theme-select" id="label-theme"
+                            >Theme</label
+                        >
+                        <select
+                            id="theme-select"
+                            aria-label="Theme selector"
+                        >
+                            <option value="dark">Dark</option>
+                            <option value="light">Light</option>
+                        </select>
+                    </div>
+
+                    <div class="settings-field">
+                        <label for="log-level-select" id="label-log-level"
+                            >Log level</label
+                        >
+                        <select
+                            id="log-level-select"
+                            aria-label="Log level selector"
+                        >
+                            <option value="WARNING">Warning</option>
+                            <option value="ERROR">Error</option>
+                            <option value="INFO">Info</option>
+                            <option value="DEBUG">Debug</option>
+                            <option value="CRITICAL">Critical</option>
+                        </select>
+                    </div>
+
+                    <div class="settings-field">
+                        <label class="inline-check" for="auto-sync-checkbox">
+                            <input id="auto-sync-checkbox" type="checkbox" />
+                            <span id="label-auto-sync"
+                                >Auto-start sync on launch</span
+                            >
+                        </label>
+                    </div>
+                    <div class="settings-field">
+                        <label class="inline-check" for="sync-only-mode-checkbox">
+                            <input
+                                id="sync-only-mode-checkbox"
+                                type="checkbox"
+                            />
+                            <span id="label-sync-only-mode"
+                                >Sync archives only</span
+                            >
+                        </label>
+                    </div>
+                    <div class="settings-field">
+                        <label
+                            for="lan-mode-select"
+                            id="label-lan-mode"
+                            >Launcher mode</label
+                        >
+                        <select
+                            id="lan-mode-select"
+                        >
+                            <option value="client">Client</option>
+                            <option value="server">Server</option>
+                        </select>
+                        <p id="lan-mode-hint" class="settings-hint">
+                            Client mode manages game downloads on request. Server mode
+                            shares selected folders; new devices require explicit approval.
+                        </p>
+                    </div>
+                    <div id="lan-discovery-section" class="settings-field" hidden>
+                        <label id="lan-discovery-address-label" for="lan-discovery-address">Server IPv4 address (optional)</label>
+                        <input id="lan-discovery-address" type="text" inputmode="decimal" placeholder="192.168.1.10" />
+                        <button id="lan-discovery-scan" type="button">Find LAN servers</button>
+                        <p id="lan-discovery-status" class="settings-hint" role="status"></p>
+                        <label id="lan-server-label" for="lan-server-select">Available servers</label>
+                        <select id="lan-server-select" disabled></select>
+                        <label id="lan-pair-code-label" for="lan-pair-code">Approval code</label>
+                        <input id="lan-pair-code" type="text" inputmode="numeric" maxlength="4" autocomplete="off" />
+                        <button id="lan-pair-connect" type="button" disabled>Connect to server</button>
+                        <p id="lan-pair-status" class="settings-hint" role="status"></p>
+                    </div>
+                    <div id="lan-pair-server-section" class="settings-field" hidden>
+                        <button id="lan-pair-begin" type="button">Show approval code</button>
+                        <button id="lan-pair-renew" type="button">Renew approval code</button>
+                        <p id="lan-pair-server-status" class="settings-hint" role="status"></p>
+                    </div>
+                    <div class="settings-field">
+                        <label for="storage-input" id="label-storage"
+                            >Install path</label
+                        >
+                        <input
+                            id="storage-input"
+                            type="text"
+                            placeholder="/media/library"
+                        />
+                        <select
+                            id="storage-select"
+                            aria-label="Windows drive selector"
+                            hidden
+                        ></select>
+                    </div>
+                    <div class="settings-field">
+                        <label for="ouisync-storage-input" id="label-ouisync-storage"
+                            >Ouisync repository storage (optional)</label
+                        >
+                        <input
+                            id="ouisync-storage-input"
+                            type="text"
+                            placeholder="Use install path"
+                        />
+                    </div>
+                    <div class="settings-field">
+                        <label
+                            for="linux-runtime-select"
+                            id="label-linux-runtime"
+                            hidden
+                            >Linux Windows Runtime</label
+                        >
+                        <select
+                            id="linux-runtime-select"
+                            aria-label="Linux Windows runtime selector"
+                            hidden
+                        >
+                            <option value="native">Native preferred</option>
+                            <option value="wine">Wine</option>
+                            <option value="proton">Proton</option>
+                            <option value="proton-ge">Proton GE</option>
+                        </select>
+                    </div>
+                    <div class="settings-field">
+                        <label
+                            for="linux-proton-path-input"
+                            id="label-linux-proton-path"
+                            hidden
+                            >Proton path</label
+                        >
+                        <input
+                            id="linux-proton-path-input"
+                            type="text"
+                            placeholder="proton"
+                            hidden
+                        />
+                    </div>
+                    <div class="settings-field">
+                        <label
+                            for="linux-proton-ge-path-input"
+                            id="label-linux-proton-ge-path"
+                            hidden
+                            >Proton GE path</label
+                        >
+                        <input
+                            id="linux-proton-ge-path-input"
+                            type="text"
+                            placeholder="/opt/proton-ge/proton"
+                            hidden
+                        />
+                    </div>
+                    <div class="settings-actions">
+                        <button id="save-settings-btn" type="button">
+                            Save Settings
+                        </button>
+                        <button id="update-rollback-btn" type="button">
+                            Rollback Last Update
+                        </button>
+                    </div>
+                </section>
+
+                <section
+                    id="settings-section-library"
+                    class="settings-group"
+                    aria-labelledby="settings-section-library-title"
+                >
+                    <h4 id="settings-section-library-title">
+                        Library and Scan
+                    </h4>
+                    <button id="install-check-btn" type="button">
+                        Re-Add Games to Sync
+                    </button>
+                    <button id="install-prereq-btn" type="button">
+                        Install the Pre-Requirements Bundle
+                    </button>
+                    <button id="install-wine-common-deps-btn" type="button">
+                        Install Common Wine Dependencies
+                    </button>
+                </section>
+
+                <section
+                    id="settings-section-network"
+                    class="settings-group"
+                    aria-labelledby="settings-section-network-title"
+                >
+                    <h4 id="settings-section-network-title">
+                        Network and Service
+                    </h4>
+                    <div class="sync-mode-actions">
+                        <button id="sync-mode-lan-btn" type="button">
+                            Resilio LAN Mode
+                        </button>
+                        <button id="sync-mode-internet-btn" type="button">
+                            Resilio Internet Mode
+                        </button>
+                        <button id="set-network-private-btn" type="button">
+                            Set Local Network To Private
+                        </button>
+                    </div>
+                    <div class="sync-service-actions">
+                        <button id="service-sync-start" type="button">
+                            Start Sync Service
+                        </button>
+                        <button id="service-sync-stop" type="button">
+                            Stop Sync Service
+                        </button>
+                        <button id="service-sync-webui" type="button">
+                            Open Status Details
+                        </button>
+                    </div>
+                </section>
+                <section
+                    class="extra-sync settings-group"
+                    aria-labelledby="extra-sync-title"
+                >
+                    <div class="extra-sync-head">
+                        <h4 id="extra-sync-title">
+                            Provider
+                        </h4>
+                        <button id="extra-sync-add-btn" type="button">
+                            Add Provider
+                        </button>
+                        <button id="extra-sync-import-btn" type="button">
+                            Import bootstrap.json
+                        </button>
+                        <input
+                            id="extra-sync-import-file"
+                            type="file"
+                            accept=".json,application/json"
+                            hidden
+                        />
+                    </div>
+                    <ul id="extra-sync-list" class="extra-sync-list"></ul>
+                </section>
+                <section
+                    id="status-lan-games-section"
+                    class="settings-group"
+                    aria-labelledby="status-lan-games-title"
+                >
+                    <div class="settings-lan-games-head">
+                        <h4 id="status-lan-games-title">LAN games</h4>
+                        <p
+                            id="status-lan-games-description"
+                            class="panel-description"
+                        >
+                            Choose which local game folders to publish for this LAN event.
+                        </p>
+                    </div>
+                    <div class="settings-field">
+                        <label id="status-lan-games-root">Root folder: -</label>
+                        <p
+                            id="status-lan-games-status"
+                            class="settings-hint"
+                            aria-live="polite"
+                        ></p>
+                    </div>
+                    <div class="settings-actions settings-lan-games-actions">
+                        <button id="status-lan-games-refresh-btn" type="button">
+                            Refresh game list
+                        </button>
+                    </div>
+                    <div
+                        id="status-lan-games-folder-list"
+                        class="status-lan-games-folder-list settings-lan-games-folder-list"
+                        aria-live="polite"
+                    ></div>
+                </section>
+                <section id="lan-server-settings-section" class="settings-group lan-server-settings" hidden>
+                    <h4 id="lan-server-settings-title">LAN server settings</h4>
+                    <p id="lan-server-settings-hint" class="settings-hint lan-server-full-width">These settings are shared with every connected client.</p>
+                    <div class="lan-server-fields lan-server-full-width">
+                        <div class="lan-server-field">
+                            <label for="lan-server-title" id="lan-server-title-label">LAN title</label>
+                            <input id="lan-server-title" type="text" maxlength="256" />
+                        </div>
+                        <div class="lan-server-field">
+                            <label for="lan-server-url" id="lan-server-url-label">LAN page URL</label>
+                            <input id="lan-server-url" type="url" maxlength="2048" />
+                        </div>
+                        <div class="lan-server-field">
+                            <label for="lan-server-stats-url" id="lan-server-stats-url-label">Statistics URL</label>
+                            <input id="lan-server-stats-url" type="url" maxlength="2048" />
+                        </div>
+                        <div class="lan-server-field">
+                            <label for="lan-server-discord-url" id="lan-server-discord-url-label">Discord URL</label>
+                            <input id="lan-server-discord-url" type="url" maxlength="2048" />
+                        </div>
+                        <div class="lan-server-field">
+                            <label for="lan-server-ts3-server" id="lan-server-ts3-label">TeamSpeak address</label>
+                            <input id="lan-server-ts3-server" type="text" maxlength="2048" />
+                        </div>
+                    </div>
+                    <h5 id="lan-server-links-title" class="lan-server-full-width">LAN links</h5>
+                    <div id="lan-server-links-list" class="lan-server-links-list lan-server-full-width"></div>
+                    <h5 id="lan-server-assets-title" class="lan-server-full-width">Available games</h5>
+                    <p id="lan-server-assets-hint" class="settings-hint lan-server-full-width">Unchecked games are hidden on clients until already installed there.</p>
+                    <div id="lan-server-assets-list" class="lan-server-assets-list lan-server-full-width"></div>
+                    <button id="lan-server-settings-save" class="lan-server-full-width" type="button">Save server settings</button>
+                    <p id="lan-server-settings-status" class="settings-hint lan-server-full-width" role="status"></p>
+                </section>
+            </div>
+            <p
+                id="settings-status"
+                class="settings-status"
+                aria-live="polite"
+            ></p>
+        </section>
+
+        <section
+            id="logs-panel"
+            class="panel logs-panel tab-panel"
+            data-tab-panel="logs"
+            hidden
+            aria-labelledby="logs-title"
+        >
+            <div class="logs-head">
+                <h2 id="logs-title">Logs</h2>
+                <div class="logs-head-actions">
+                    <label class="logs-control" for="logs-source-filter-select">
+                        <span id="logs-source-filter-label">Log source</span>
+                        <select
+                            id="logs-source-filter-select"
+                            aria-label="Log source filter"
+                        >
+                            <option value="all">All logs</option>
+                            <option value="lanlauncherng">LANLauncherNG</option>
+                            <option value="resilio">Resilio</option>
+                            <option value="ouisync">Ouisync</option>
+                            <option value="unknown">Unknown</option>
+                        </select>
+                    </label>
+                    <label class="logs-control" for="logs-length-select">
+                        <span id="logs-length-label">Log length</span>
+                        <select
+                            id="logs-length-select"
+                            aria-label="Log length selector"
+                        >
+                            <option value="200">200 lines</option>
+                            <option value="500">500 lines</option>
+                            <option value="1000">1000 lines</option>
+                            <option value="2000">2000 lines</option>
+                        </select>
+                    </label>
+                    <label class="logs-control" for="logs-level-select">
+                        <span id="logs-level-label">Live log level</span>
+                        <select
+                            id="logs-level-select"
+                            aria-label="Live log level selector"
+                        >
+                            <option value="WARNING">Warning</option>
+                            <option value="ERROR">Error</option>
+                            <option value="INFO">Info</option>
+                            <option value="DEBUG">Debug</option>
+                            <option value="CRITICAL">Critical</option>
+                        </select>
+                    </label>
+                    <button id="logs-pause-btn" type="button">Pause</button>
+                    <button id="logs-refresh-btn" type="button">
+                        Refresh Logs
+                    </button>
+                </div>
+            </div>
+            <pre id="logs-output" class="logs-output" aria-live="polite"></pre>
+        </section>
+
+        <div id="startup-screen" class="wizard-backdrop">
+            <div class="wizard-modal startup-modal" aria-live="polite">
+                <div class="startup-status">
+                    <span class="inline-spinner" aria-hidden="true"></span>
+                    <h3 id="startup-title">Starting LANLauncherNG</h3>
+                </div>
+                <p id="startup-text">Waiting for backend services...</p>
+            </div>
+        </div>
+
+        <div id="welcome-wizard" class="wizard-backdrop" hidden>
+            <div
+                class="wizard-modal welcome-wizard-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="wizard-title"
+            >
+                <h3 id="wizard-title">Welcome</h3>
+                <p id="wizard-text">
+                    Please configure nickname and install path.
+                </p>
+                <section
+                    class="wizard-provider-guidance"
+                    aria-labelledby="wizard-provider-guidance-title"
+                >
+                    <h4 id="wizard-provider-guidance-title">
+                        Game distribution
+                    </h4>
+                    <p id="wizard-provider-global"></p>
+                    <p id="wizard-provider-legacy"></p>
+                    <p id="wizard-provider-lan"></p>
+                </section>
+                <label for="wizard-nickname-input" id="wizard-label-nickname"
+                    >Nickname</label
+                >
+                <input
+                    id="wizard-nickname-input"
+                    type="text"
+                    maxlength="32"
+                    placeholder="Player name"
+                />
+                <label for="wizard-storage-input" id="wizard-label-storage"
+                    >Install path</label
+                >
+                <input
+                    id="wizard-storage-input"
+                    type="text"
+                    placeholder="/media/library"
+                />
+                <select
+                    id="wizard-storage-select"
+                    aria-label="Windows drive selector"
+                    hidden
+                ></select>
+                <button id="wizard-save-btn" type="button">
+                    Save And Continue
+                </button>
+                <pre
+                    id="wizard-console"
+                    class="wizard-console"
+                    aria-live="polite"
+                ></pre>
+            </div>
+        </div>
+
+        <div id="local-game-modal" class="wizard-backdrop" hidden>
+            <div
+                class="wizard-modal local-game-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="local-game-modal-title"
+            >
+                <h3 id="local-game-modal-title">Add Local Game</h3>
+                <p id="local-game-modal-note" class="modal-note">
+                    Local entries are stored in the launcher database and are
+                    not synced to the network.
+                </p>
+                <p id="local-game-modal-status" role="alert"></p>
+                <label for="local-game-id" id="local-game-label-id">Game ID</label>
+                <input id="local-game-id" type="text" maxlength="128" />
+                <label for="local-game-title-en" id="local-game-label-title-en"
+                    >Title (EN)</label
+                >
+                <input id="local-game-title-en" type="text" />
+                <label for="local-game-title-de" id="local-game-label-title-de"
+                    >Title (DE)</label
+                >
+                <input id="local-game-title-de" type="text" />
+                <label for="local-game-genre" id="local-game-label-genre"
+                    >Genre</label
+                >
+                <select id="local-game-genre"></select>
+                <label
+                    for="local-game-release-year"
+                    id="local-game-label-release-year"
+                    >Release Year</label
+                >
+                <input id="local-game-release-year" type="text" maxlength="16" />
+                <label for="local-game-publisher" id="local-game-label-publisher"
+                    >Publisher</label
+                >
+                <input id="local-game-publisher" type="text" />
+                <label for="local-game-size" id="local-game-label-size"
+                    >Size (GB)</label
+                >
+                <input id="local-game-size" type="number" step="0.01" min="0" />
+                <label
+                    for="local-game-max-players"
+                    id="local-game-label-max-players"
+                    >Max Players</label
+                >
+                <input id="local-game-max-players" type="text" maxlength="32" />
+                <label for="local-game-version" id="local-game-label-version"
+                    >Version</label
+                >
+                <input id="local-game-version" type="text" maxlength="64" />
+                <label
+                    for="local-game-start-file"
+                    id="local-game-label-start-file"
+                    >Start File</label
+                >
+                <input id="local-game-start-file" type="text" />
+                <label
+                    for="local-game-start-args"
+                    id="local-game-label-start-args"
+                    >Start Arguments</label
+                >
+                <textarea id="local-game-start-args" rows="3"></textarea>
+                <label for="local-game-readme-en" id="local-game-label-readme-en"
+                    >Description (EN)</label
+                >
+                <textarea id="local-game-readme-en" rows="3"></textarea>
+                <label for="local-game-readme-de" id="local-game-label-readme-de"
+                    >Description (DE)</label
+                >
+                <textarea id="local-game-readme-de" rows="3"></textarea>
+                <label for="local-game-image" id="local-game-label-image"
+                    >Game Picture</label
+                >
+                <input id="local-game-image" type="file" accept="image/*" />
+                <div id="server-cover-download" hidden>
+                    <label id="server-cover-url-label" for="server-cover-url">Cover image URL</label>
+                    <input id="server-cover-url" type="url" />
+                    <button id="server-cover-download-btn" type="button">Download and resize cover</button>
+                    <p id="server-cover-download-status" class="settings-hint" role="status"></p>
+                </div>
+                <div class="local-game-modal-actions">
+                    <button id="local-game-cancel-btn" type="button">
+                        Cancel
+                    </button>
+                    <button id="local-game-save-btn" type="button">
+                        Save Local Game
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="extra-sync-modal" class="wizard-backdrop" hidden>
+            <div
+                class="wizard-modal extra-sync-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="extra-sync-modal-title"
+            >
+                <h3 id="extra-sync-modal-title">Manual Sync Item</h3>
+                <label for="extra-sync-game-id" id="extra-sync-label-game-id"
+                    >Game-ID</label
+                >
+                <input id="extra-sync-game-id" type="text" maxlength="128" />
+                <label for="extra-sync-key" id="extra-sync-label-key"
+                    >Game-Key</label
+                >
+                <input id="extra-sync-key" type="text" />
+                <label for="extra-sync-title-en" id="extra-sync-label-title-en"
+                    >Title (EN)</label
+                >
+                <input id="extra-sync-title-en" type="text" />
+                <label for="extra-sync-title-de" id="extra-sync-label-title-de"
+                    >Title (DE)</label
+                >
+                <input id="extra-sync-title-de" type="text" />
+                <label
+                    for="extra-sync-release-year"
+                    id="extra-sync-label-release-year"
+                    >Release Year</label
+                >
+                <input
+                    id="extra-sync-release-year"
+                    type="text"
+                    maxlength="16"
+                />
+                <label
+                    for="extra-sync-publisher"
+                    id="extra-sync-label-publisher"
+                    >Publisher</label
+                >
+                <input id="extra-sync-publisher" type="text" />
+                <label for="extra-sync-size" id="extra-sync-label-size"
+                    >Size (GB)</label
+                >
+                <input id="extra-sync-size" type="number" step="0.1" min="0" />
+                <label for="extra-sync-persons" id="extra-sync-label-persons"
+                    >Persons</label
+                >
+                <input id="extra-sync-persons" type="text" maxlength="32" />
+                <label for="extra-sync-version" id="extra-sync-label-version"
+                    >Version</label
+                >
+                <input id="extra-sync-version" type="text" maxlength="64" />
+                <label
+                    for="extra-sync-readme-en"
+                    id="extra-sync-label-readme-en"
+                    >Description (EN)</label
+                >
+                <textarea id="extra-sync-readme-en" rows="2"></textarea>
+                <label
+                    for="extra-sync-readme-de"
+                    id="extra-sync-label-readme-de"
+                    >Description (DE)</label
+                >
+                <textarea id="extra-sync-readme-de" rows="2"></textarea>
+                <label class="inline-check" for="extra-sync-master-required">
+                    <input id="extra-sync-master-required" type="checkbox" />
+                    <span id="extra-sync-label-master-required"
+                        >Master Required</span
+                    >
+                </label>
+                <label class="inline-check" for="extra-sync-visible">
+                    <input id="extra-sync-visible" type="checkbox" />
+                    <span id="extra-sync-label-visible"
+                        >Visible in Game List</span
+                    >
+                </label>
+                <label class="inline-check" for="extra-sync-enabled">
+                    <input id="extra-sync-enabled" type="checkbox" />
+                    <span id="extra-sync-label-enabled">Sync Enabled</span>
+                </label>
+                <label for="extra-sync-provider-type" id="extra-sync-label-provider-type"
+                    >Provider Type</label
+                >
+                <select id="extra-sync-provider-type">
+                    <option value="ouisync" data-i18n="settings.extra_sync_provider_type_ouisync">Ouisync</option>
+                    <option value="resilio" data-i18n="settings.extra_sync_provider_type_resilio">Resilio</option>
+                </select>
+                <label class="inline-check" for="extra-sync-is-provider">
+                    <input id="extra-sync-is-provider" type="checkbox" />
+                    <span id="extra-sync-label-is-provider">Is Provider</span>
+                </label>
+                <label class="inline-check" for="extra-sync-has-game-db">
+                    <input id="extra-sync-has-game-db" type="checkbox" />
+                    <span id="extra-sync-label-has-game-db">Has game.db</span>
+                </label>
+                <label
+                    for="extra-sync-packed-image-path"
+                    id="extra-sync-label-packed-image-path"
+                >
+                    Packed Image Path
+                </label>
+                <input
+                    id="extra-sync-packed-image-path"
+                    type="text"
+                    maxlength="512"
+                    placeholder="image/images.rar"
+                />
+                <label
+                    for="extra-sync-packed-image-password"
+                    id="extra-sync-label-packed-image-password"
+                >
+                    Packed Image Password
+                </label>
+                <input
+                    id="extra-sync-packed-image-password"
+                    type="password"
+                    maxlength="256"
+                    autocomplete="off"
+                />
+                <div class="extra-sync-modal-actions">
+                    <button id="extra-sync-cancel-btn" type="button">
+                        Cancel
+                    </button>
+                    <button id="extra-sync-save-btn" type="button">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="shutdown-update-modal" class="wizard-backdrop" hidden>
+            <div
+                class="wizard-modal shutdown-update-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="shutdown-update-title"
+            >
+                <h3 id="shutdown-update-title">Applying Update</h3>
+                <p id="shutdown-update-text">
+                    Applying a newer launcher version before shutdown.
+                </p>
+                <p id="shutdown-update-status" class="shutdown-update-status">
+                    Waiting for updater status...
+                </p>
+                <pre
+                    id="shutdown-update-console"
+                    class="wizard-console"
+                    aria-live="polite"
+                ></pre>
+                <div class="shutdown-update-actions">
+                    <button
+                        id="shutdown-update-resume-btn"
+                        type="button"
+                        hidden
+                    >
+                        Resume Update
+                    </button>
+                    <button id="shutdown-update-abort-btn" type="button" hidden>
+                        Abort Update
+                    </button>
+                    <button
+                        id="shutdown-update-confirm-btn"
+                        type="button"
+                        hidden
+                    >
+                        Close App
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script src="/app/app.js"></script>
+    </body>
+</html>

@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://foss-gameindex.github.io/opensourcegameindex/schema/v2/index.schema.json",
+  "title": "Open Source Game Index v2 with LLNG distribution metadata",
+  "type": "object",
+  "required": ["schema_version", "index_revision", "games", "signature"],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "index_revision": { "type": "integer", "minimum": 1 },
+    "generated_at_utc": { "type": "string" },
+    "source": { "type": "object" },
+    "games": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["game_id"],
+        "properties": {
+          "game_id": { "type": "string", "pattern": "^[A-Za-z0-9._-]{1,128}$" },
+          "llng": { "$ref": "#/$defs/llng" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "signature": { "$ref": "#/$defs/signature" }
+  },
+  "$defs": {
+    "signature": {
+      "type": "object",
+      "required": ["key_id", "value"],
+      "properties": {
+        "key_id": { "type": "string", "pattern": "^[A-Za-z0-9._-]{1,128}$" },
+        "value": {
+          "type": "string",
+          "minLength": 344,
+          "maxLength": 1024,
+          "contentEncoding": "base64",
+          "pattern": "^[A-Za-z0-9+/]+={0,2}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "llng": {
+      "type": "object",
+      "required": ["schema_version"],
+      "properties": {
+        "schema_version": { "const": 1 },
+        "distribution": {
+          "type": "object",
+          "required": ["provider", "read_token"],
+          "properties": {
+            "provider": { "const": "ouisync" },
+            "read_token": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 8192,
+              "pattern": "^[^\\s]+$"
+            },
+            "info_hash": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^[^\\s]+$"
+            },
+            "editable_files": {
+              "type": "array",
+              "maxItems": 4096,
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1, "maxLength": 1024 }
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

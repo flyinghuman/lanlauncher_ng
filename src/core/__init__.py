@@ -1,0 +1,1 @@
+"""LANLauncherNG core package."""

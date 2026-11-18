@@ -1,0 +1,9 @@
+# Resilio sync runtime config (yaml mirror)
+storage_path: data/sync
+pid_file: data/sync/rslsync.pid
+check_for_updates: false
+use_gui: false
+listening_port: 13337
+webui:
+  listen: 127.0.0.1:13338
+  api_key: "VGWWKFEB2BVHKUNMUPMZHTZFNEVSPWT5CO3UKNKOMXL54FOYDF7VQ2FTUK2M7HXQRMRZ4H5XPABI3NKR7EMCMCVEJDGG54RDO56AGASC2WTU366TPMDTTH4HUS4XWL5PHLK2LIA"

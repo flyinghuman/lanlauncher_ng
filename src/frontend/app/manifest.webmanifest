@@ -1,0 +1,21 @@
+{
+  "name": "LANLauncherNG",
+  "short_name": "LANLauncherNG",
+  "description": "Cross-platform LAN game launcher",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1117",
+  "theme_color": "#0f1117",
+  "icons": [
+    {
+      "src": "/assets/icons/lanlauncherng.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/icons/lanlauncherng.ico",
+      "sizes": "16x16 32x32 48x48 64x64 128x128",
+      "type": "image/x-icon"
+    }
+  ]
+}

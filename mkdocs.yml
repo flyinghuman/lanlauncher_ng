@@ -1,0 +1,66 @@
+site_name: LANLauncherNG
+site_description: Cross-platform LAN game launcher documentation
+site_url: https://example.invalid/lanlauncherng
+repo_name: LANLauncherNG
+repo_url: https://example.invalid/lanlauncherng.git
+docs_dir: docs
+use_directory_urls: false
+theme:
+  name: mkdocs
+markdown_extensions:
+  - tables
+  - admonition
+nav:
+  - Home:
+      - Overview: index.md
+  - English:
+      - Introduction: en/index.md
+      - For players: en/using-lanlauncher.md
+      - Developer reference:
+          - Architecture: en/architecture.md
+          - Core Service: en/core-service.md
+          - Catalog and Install State: en/catalog-install-state.md
+          - Sync Provider: en/sync-provider.md
+          - Platform Adapters: en/platform-adapters.md
+          - Frontend UI: en/frontend-ui.md
+          - Game Workflow: en/game-workflow.md
+          - Packaging and Release: en/packaging-release.md
+          - Game Metadata: en/game-metadata.md
+          - Legacy Assets and Install Scripts: en/legacy-assets-install.md
+          - Local Resilio Assets: en/local-assets.md
+          - Rollback Guide: en/rollback.md
+          - Dependency Policy: en/dependency-policy.md
+          - ADR-0002 Publisher Trust: shared/adr/ADR-0002.md
+          - ADR-0003 Dokan Mounts: shared/adr/ADR-0003.md
+          - Development Workflow: en/development.md
+          - LANPage Development Setup: en/lanpage-development.md
+          - i18n Guide: en/i18n.md
+          - i18n Workflow: en/i18n-workflow.md
+  - Deutsch:
+      - Einfuehrung: de/index.md
+      - Für Anwender: de/lanlauncher-nutzen.md
+      - Entwicklerreferenz:
+          - Architektur: de/architektur.md
+          - Kernservice: de/kernservice.md
+          - Katalog und Installationsstatus: de/katalog-installationsstatus.md
+          - Sync-Provider: de/sync-provider.md
+          - Plattform-Adapter: de/plattform-adapter.md
+          - Frontend-UI: de/frontend-ui.md
+          - Game-Workflow: de/game-workflow.md
+          - Paketierung und Release: de/paketierung-release.md
+          - Spiele-Metadaten: de/game-metadata.md
+          - Legacy-Assets und Installskripte: de/legacy-assets-install.md
+          - Lokale Resilio-Artefakte: de/lokale-resilio-artefakte.md
+          - Rollback-Leitfaden: de/rollback.md
+          - Abhaengigkeitspolitik: de/abhaengigkeitspolitik.md
+          - ADR-0002 Publisher-Vertrauen: shared/adr/ADR-0002.md
+          - ADR-0003 Dokan-Mounts: shared/adr/ADR-0003.md
+          - Entwicklungsablauf: de/entwicklung.md
+          - LANPage Entwicklungssetup: de/lanpage-entwicklung.md
+          - i18n Leitfaden: de/i18n.md
+          - i18n Ablauf: de/i18n-workflow.md
+  - Shared:
+      - Ticket Process: shared/tickets.md
+      - Release Checklist: shared/release-checklist.md
+      - ADR Template: shared/adr/ADR-TEMPLATE.md
+      - ADR-0001: shared/adr/ADR-0001.md
