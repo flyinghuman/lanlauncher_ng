@@ -783,5 +783,14 @@
   "ui.ouisync_peer_removed": "Peer removed",
   "ui.ouisync_peer_action_failed": "Peer update failed",
   "status.error_ouisync_peer_address_invalid": "Enter an IP address with a port, for example 192.168.1.20:20209 or quic/192.168.1.20:20209. Host names are not supported.",
-  "status.error_ouisync_peer_action_invalid": "The peer action is invalid."
+  "status.error_ouisync_peer_action_invalid": "The peer action is invalid.",
+  "ui.ouisync_nudge_button": "Nudge sync",
+  "ui.ouisync_nudge_hint": "Re-adds known peers, restarts the DHT lookup and reconnects this repository. LLNG also does this automatically when a repository still has no local block after 60 seconds.",
+  "ui.ouisync_nudge_working": "Nudging repository sync…",
+  "ui.ouisync_nudge_done": "Sync nudged",
+  "ui.ouisync_nudge_failed": "Could not nudge sync",
+  "ui.ouisync_nudge_action_peers_readded": "known peers re-added",
+  "ui.ouisync_nudge_action_dht_lookup_restarted": "DHT lookup restarted",
+  "ui.ouisync_nudge_action_sync_relinked": "repository reconnected",
+  "ui.ouisync_nudge_action_sync_enabled": "sync enabled"
 }

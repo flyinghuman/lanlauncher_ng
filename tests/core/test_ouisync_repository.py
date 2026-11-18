@@ -371,6 +371,133 @@ class WaitUntilRepositoryCompleteTests(unittest.TestCase):
         self.assertTrue(repository.opened)
         self.assertTrue(all(file.closed for file in repository.files))
 
+    def test_empty_repository_is_nudged_with_escalation_until_blocks_arrive(self) -> None:
+        from src.core.sync import ouisync_repository as module
+
+        class EmptyRepository:
+            def __init__(self):
+                self.polls = 0
+
+            async def get_sync_progress(self):
+                self.polls += 1
+                # 0/0 like a fresh replica whose index has not arrived yet.
+                return SimpleNamespace(value=0, total=0) if self.polls < 60 else SimpleNamespace(value=1, total=1)
+
+            async def read_directory(self, *, path):
+                return [] if self.polls < 60 else [SimpleNamespace(name="demo.tar.gz")]
+
+        attempts: list[int] = []
+
+        async def nudge(attempt: int) -> None:
+            attempts.append(attempt)
+
+        repository = EmptyRepository()
+        asyncio.run(
+            module.wait_until_repository_complete(
+                repository, poll_seconds=0.005, nudge=nudge, nudge_seconds=0.03
+            )
+        )
+        # First attempt after 30 ms, then 60 ms, 120 ms ...; attempts count up.
+        self.assertGreaterEqual(len(attempts), 2)
+        self.assertEqual(attempts, list(range(len(attempts))))
+
+    def test_repository_with_local_blocks_is_never_nudged(self) -> None:
+        from src.core.sync import ouisync_repository as module
+
+        repository = _StalledRepository(readable=False, complete_after_polls=30)
+        nudged: list[int] = []
+
+        async def nudge(attempt: int) -> None:
+            nudged.append(attempt)
+
+        asyncio.run(
+            module.wait_until_repository_complete(
+                repository,
+                stall_seconds=10,
+                poll_seconds=0.005,
+                nudge=nudge,
+                nudge_seconds=0.01,
+            )
+        )
+        self.assertEqual(nudged, [])
+
+    def test_failed_nudge_does_not_end_the_wait(self) -> None:
+        from src.core.sync import ouisync_repository as module
+
+        class Repository:
+            polls = 0
+
+            async def get_sync_progress(self):
+                Repository.polls += 1
+                done = Repository.polls >= 20
+                return SimpleNamespace(value=int(done), total=int(done))
+
+            async def read_directory(self, *, path):
+                return [SimpleNamespace(name="a")] if Repository.polls >= 20 else []
+
+        async def nudge(_attempt: int) -> None:
+            raise RuntimeError("network down")
+
+        _entries, progress = asyncio.run(
+            module.wait_until_repository_complete(
+                Repository(), poll_seconds=0.005, nudge=nudge, nudge_seconds=0.01
+            )
+        )
+        self.assertEqual(progress.value, 1)
+
+    def test_nudge_readds_peers_restarts_dht_and_relinks_on_escalation(self) -> None:
+        from src.core.sync import ouisync_repository as module
+
+        calls: list[tuple] = []
+
+        class Session:
+            async def get_user_provided_peers(self):
+                return ["quic/10.0.0.2:1", "quic/10.0.0.1:1"]
+
+            async def add_user_provided_peers(self, *, addrs):
+                calls.append(("peers", tuple(addrs)))
+
+        class Repository:
+            def __init__(self, dht):
+                self.dht = dht
+
+            async def is_sync_enabled(self):
+                return True
+
+            async def is_dht_enabled(self):
+                return self.dht
+
+            async def set_dht_enabled(self, *, enabled):
+                calls.append(("dht", enabled))
+
+            async def set_sync_enabled(self, *, enabled):
+                calls.append(("sync", enabled))
+
+            async def get_path(self):
+                return "/repo"
+
+        soft = asyncio.run(
+            module.nudge_repository(
+                Session(), Repository(dht=True), peer_addrs=("quic/10.0.0.1:1",)
+            )
+        )
+        self.assertEqual(soft, ["peers_readded", "dht_lookup_restarted"])
+        self.assertEqual(
+            calls,
+            [
+                ("peers", ("quic/10.0.0.1:1", "quic/10.0.0.2:1")),
+                ("dht", False),
+                ("dht", True),
+            ],
+        )
+        calls.clear()
+        # Private LAN repositories keep DHT off; escalation re-links the repository.
+        strong = asyncio.run(
+            module.nudge_repository(Session(), Repository(dht=False), relink=True)
+        )
+        self.assertEqual(strong, ["peers_readded", "sync_relinked"])
+        self.assertEqual(calls[1:], [("sync", False), ("sync", True)])
+
     def test_wait_honors_cancellation(self) -> None:
         from src.core.sync import ouisync_repository as module
 

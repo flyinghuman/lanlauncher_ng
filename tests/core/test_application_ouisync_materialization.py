@@ -460,6 +460,20 @@ class ApplicationOuisyncMaterializationTests(unittest.TestCase):
             self.assertEqual(access.game_id, "locallansync")
             self.assertEqual(access.repository_namespace, "lan-repository")
 
+    def test_repository_nudge_action_routes_to_ouisync_provider(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            app = Application(AppConfig(bind_port=0, library_path=temporary))
+            self.addCleanup(app._server.server_close)
+            provider = Mock()
+            provider.nudge_repository_sync.return_value = {"ok": True}
+            with (
+                patch.object(app, "_sync_provider_for_type", return_value=provider),
+                patch.object(app, "_ouisync_repository_game_id", return_value=""),
+            ):
+                result = app._ouisync_repository_action("nudge", "abc")
+            self.assertEqual(result, {"ok": True})
+            provider.nudge_repository_sync.assert_called_once_with("abc")
+
     def test_ouisync_peer_action_routes_only_to_ouisync_provider(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             app = Application(AppConfig(bind_port=0, library_path=temporary))

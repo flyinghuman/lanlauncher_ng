@@ -11,7 +11,7 @@ import tempfile
 import threading
 import uuid
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 
 _ASSET_MANIFEST_NAME = ".llng-ouisync-assets.json"
@@ -28,6 +28,50 @@ PROGRESS_STALL_SECONDS = 60.0
 VERIFY_RETRY_MAX_SECONDS = 900.0
 VERIFY_READ_CHUNK_BYTES = 1024 * 1024
 _DIRECTORY_ENTRY_TYPE = 2
+# A repository with no local block after this delay is treated as stuck: Ouisync
+# has no "request again" command, so LLNG re-adds known peers, triggers a fresh
+# DHT lookup and, from the second attempt on, re-registers the repository with
+# the network (sync off/on), which rebuilds its peer links and pending requests.
+EMPTY_REPOSITORY_NUDGE_SECONDS = 60.0
+EMPTY_REPOSITORY_NUDGE_MAX_SECONDS = 900.0
+
+
+async def nudge_repository(
+    session: Any,
+    repository: Any,
+    *,
+    peer_addrs: tuple[str, ...] | list[str] = (),
+    relink: bool = False,
+    logger: Any = None,
+) -> list[str]:
+    """Try to restart a stuck repository sync; return the actions performed."""
+    actions: list[str] = []
+    known = [str(item) for item in peer_addrs if str(item).strip()]
+    get_user_peers = getattr(session, "get_user_provided_peers", None)
+    if callable(get_user_peers):
+        known.extend(str(item) for item in await get_user_peers())
+    known = list(dict.fromkeys(known))
+    if known:
+        await session.add_user_provided_peers(addrs=known)
+        actions.append("peers_readded")
+    if await repository.is_sync_enabled() and await repository.is_dht_enabled():
+        await repository.set_dht_enabled(enabled=False)
+        await repository.set_dht_enabled(enabled=True)
+        actions.append("dht_lookup_restarted")
+    if relink:
+        await repository.set_sync_enabled(enabled=False)
+        await repository.set_sync_enabled(enabled=True)
+        actions.append("sync_relinked")
+    elif not await repository.is_sync_enabled():
+        await repository.set_sync_enabled(enabled=True)
+        actions.append("sync_enabled")
+    if logger is not None:
+        logger.info(
+            "ouisync_repository_nudged path=%s actions=%s",
+            await repository.get_path(),
+            ",".join(actions) or "-",
+        )
+    return actions
 
 
 async def verify_repository_readable(
@@ -75,15 +119,22 @@ async def wait_until_repository_complete(
     stall_seconds: float = PROGRESS_STALL_SECONDS,
     poll_seconds: float = 0.5,
     logger: Any = None,
+    nudge: Callable[[int], Awaitable[Any]] | None = None,
+    nudge_seconds: float = EMPTY_REPOSITORY_NUDGE_SECONDS,
 ) -> tuple[list[Any], Any]:
     """Wait for a complete snapshot; verify by reading when block progress stalls.
 
+    While no block is present locally, ``nudge(attempt)`` is awaited after
+    ``nudge_seconds`` and then with a doubling delay (capped at 15 minutes).
     Returns the root directory entries and the last sync progress.
     """
     loop = asyncio.get_running_loop()
     last_counts: tuple[int, int] | None = None
     last_change = loop.time()
     verify_delay = stall_seconds
+    empty_since = loop.time()
+    nudge_delay = nudge_seconds
+    nudge_attempt = 0
     while True:
         if cancelled is not None and cancelled.is_set():
             raise asyncio.CancelledError
@@ -94,6 +145,20 @@ async def wait_until_repository_complete(
         if entries and (total == 0 or synced >= total):
             return entries, sync_progress
         now = loop.time()
+        if synced > 0:
+            empty_since = now
+            nudge_delay = nudge_seconds
+        elif nudge is not None and now - empty_since >= nudge_delay:
+            try:
+                await nudge(nudge_attempt)
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:  # noqa: BLE001 - a failed nudge must not end the wait
+                if logger is not None:
+                    logger.warning("ouisync_repository_nudge_failed error=%s", type(exc).__name__)
+            nudge_attempt += 1
+            empty_since = loop.time()
+            nudge_delay = min(EMPTY_REPOSITORY_NUDGE_MAX_SECONDS, nudge_delay * 2)
         if (synced, total) != last_counts:
             last_counts = (synced, total)
             last_change = now
@@ -236,11 +301,23 @@ async def ensure_repository_synced(
     if isinstance(peer_addrs, (list, tuple)) and peer_addrs:
         await session.add_user_provided_peers(addrs=list(peer_addrs))
 
+    logger = logging.getLogger(__name__)
+
+    async def nudge(attempt: int) -> None:
+        await nudge_repository(
+            session,
+            repository,
+            peer_addrs=tuple(peer_addrs) if isinstance(peer_addrs, (list, tuple)) else (),
+            relink=attempt >= 1,
+            logger=logger,
+        )
+
     _entries, sync_progress = await wait_until_repository_complete(
         repository,
         cancelled=cancelled,
         progress=progress,
-        logger=logging.getLogger(__name__),
+        logger=logger,
+        nudge=nudge,
     )
     if progress is not None:
         progress(

@@ -95,6 +95,7 @@
     ouisyncSelectedRepositoryHash: "",
     ouisyncDirectoryPath: "/",
     ouisyncCopyBusy: false,
+    ouisyncNudgeBusy: false,
     shutdownUpdatePollTimer: 0,
     shutdownUpdateAutoCloseTimer: 0,
     shutdownUpdateSessionId: "",
@@ -243,6 +244,8 @@
     ouisyncMountForceStop: document.getElementById("ouisync-mount-force-stop"),
     ouisyncCopyTarget: document.getElementById("ouisync-copy-target"),
     ouisyncCopyStatus: document.getElementById("ouisync-copy-status"),
+    ouisyncNudgeSync: document.getElementById("ouisync-nudge-sync"),
+    ouisyncNudgeStatus: document.getElementById("ouisync-nudge-status"),
     ouisyncPeersCard: document.getElementById("ouisync-peers-card"),
     ouisyncPeersHint: document.getElementById("ouisync-peers-hint"),
     ouisyncPeerList: document.getElementById("ouisync-peer-list"),
@@ -2781,6 +2784,8 @@
     if (el.ouisyncMountStop) el.ouisyncMountStop.disabled = !selected || !mountPath;
     if (el.ouisyncMountForceStop) el.ouisyncMountForceStop.disabled = !selected || !mountPath;
     if (el.ouisyncCopyStatus && !state.ouisyncCopyBusy) el.ouisyncCopyStatus.textContent = "";
+    if (el.ouisyncNudgeSync) el.ouisyncNudgeSync.disabled = !selected || state.ouisyncNudgeBusy;
+    if (el.ouisyncNudgeStatus && !selected) el.ouisyncNudgeStatus.textContent = "";
     renderOuisyncPeers(payload, Boolean(selected));
   }
 
@@ -2848,6 +2853,33 @@
       el.ouisyncPeerListeners.textContent = listeners.length
         ? `${t("ui.ouisync_peer_listeners", "This device listens on")}: ${listeners.join(", ")} · ${t("ui.ouisync_peer_listeners_hint", "On another device, add this device's LAN IP address with this port.")}`
         : "";
+    }
+  }
+
+  async function nudgeOuisyncRepository() {
+    if (!state.ouisyncSelectedRepositoryHash || state.ouisyncNudgeBusy) return;
+    state.ouisyncNudgeBusy = true;
+    if (el.ouisyncNudgeSync) el.ouisyncNudgeSync.disabled = true;
+    if (el.ouisyncNudgeStatus) el.ouisyncNudgeStatus.textContent = t("ui.ouisync_nudge_working", "Nudging repository sync…");
+    try {
+      const response = await apiPost("/sync/providers/ouisync/repository-action", {
+        action: "nudge",
+        info_hash: state.ouisyncSelectedRepositoryHash,
+      });
+      const result = response?.result || {};
+      if (!result.ok) throw new Error(result.message || "ouisync_repository_nudge_failed");
+      const actions = (Array.isArray(result.actions) ? result.actions : [])
+        .map((action) => t(`ui.ouisync_nudge_action_${action}`, action));
+      if (el.ouisyncNudgeStatus) {
+        el.ouisyncNudgeStatus.textContent = `${t("ui.ouisync_nudge_done", "Sync nudged")}: ${actions.join(", ") || "-"}`;
+      }
+    } catch (error) {
+      if (el.ouisyncNudgeStatus) {
+        el.ouisyncNudgeStatus.textContent = `${t("ui.ouisync_nudge_failed", "Could not nudge sync")}: ${providerErrorLabel(String(error?.message || error)) || String(error?.message || error)}`;
+      }
+    } finally {
+      state.ouisyncNudgeBusy = false;
+      await refreshOuisyncInventory(true);
     }
   }
 
@@ -5094,6 +5126,8 @@
     ouiText("ouisync-th-upload", "ui.ouisync_upload", "Upload");
     ouiText("ouisync-debug-modal-title", "ui.ouisync_debug_modal_title", "Ouisync diagnostics");
     ouiText("ouisync-peers-title", "ui.ouisync_peers_title", "Peers");
+    ouiText("ouisync-nudge-sync", "ui.ouisync_nudge_button", "Nudge sync");
+    if (el.ouisyncNudgeSync) el.ouisyncNudgeSync.title = t("ui.ouisync_nudge_hint", "Re-adds known peers, restarts the DHT lookup and reconnects this repository. LLNG also does this automatically when a repository still has no local block after 60 seconds.");
     ouiText("ouisync-peers-hint", "ui.ouisync_peers_session_hint", "Ouisync reports peers for the whole session, not per repository, so this list applies to all repositories.");
     ouiText("ouisync-peer-th-address", "ui.ouisync_peer_column_address", "Address");
     ouiText("ouisync-peer-th-source", "ui.ouisync_peer_column_source", "Source");
@@ -8367,6 +8401,7 @@
     el.ouisyncSettingPex?.addEventListener("change", (event) => updateOuisyncRepositorySetting("peer_exchange_enabled", event.currentTarget.checked, event.currentTarget));
     el.ouisyncSettingCache?.addEventListener("change", (event) => updateOuisyncRepositorySetting("cache_servers_enabled", event.currentTarget.checked, event.currentTarget));
     el.ouisyncMountStart?.addEventListener("click", () => runOuisyncMountAction("mount"));
+    el.ouisyncNudgeSync?.addEventListener("click", () => nudgeOuisyncRepository());
     el.ouisyncPeerAddForm?.addEventListener("submit", (event) => {
       event.preventDefault();
       runOuisyncPeerAction("add", String(el.ouisyncPeerAddInput?.value || "").trim(), el.ouisyncPeerAddButton);

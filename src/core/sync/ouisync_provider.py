@@ -21,6 +21,7 @@ from src.core.catalog.game_index import OuisyncRepositoryAccess
 from src.core.sync.ouisync_session import load_session_api
 from src.core.sync.ouisync_repository import (
     ensure_repository_synced,
+    nudge_repository,
     run_with_repository_mount,
 )
 from src.core.sync.ouisync_materializer import materialize_repository
@@ -1372,6 +1373,38 @@ class OuisyncSyncProvider:
                 "repositories": [],
                 "network": {},
             }
+
+    def nudge_repository_sync(self, repository_hash: str) -> dict[str, Any]:
+        """Re-add peers, restart the DHT lookup and re-link one repository."""
+        requested_hash = str(repository_hash or "").strip().lower()
+        if not requested_hash:
+            return {"ok": False, "message": "ouisync_repository_not_found"}
+        if self.status().state != "running" or self._session is None:
+            return {"ok": False, "message": "ouisync_session_unavailable"}
+        with self._lock:
+            peer_addrs = tuple(self._network_peer_addrs)
+
+        async def nudge() -> dict[str, Any]:
+            for repository in (await self._session.list_repositories()).values():
+                if str(await repository.get_info_hash()).lower() == requested_hash:
+                    actions = await nudge_repository(
+                        self._session,
+                        repository,
+                        peer_addrs=peer_addrs,
+                        relink=True,
+                        logger=logging.getLogger(__name__),
+                    )
+                    return {
+                        "ok": True,
+                        "message": "ouisync_repository_nudged",
+                        "actions": actions,
+                    }
+            return {"ok": False, "message": "ouisync_repository_not_found"}
+
+        try:
+            return self._submit(nudge(), timeout=max(10.0, self._request_timeout_seconds))
+        except Exception as exc:  # noqa: BLE001 - stable API error key
+            return {"ok": False, "message": self._error_key(exc)}
 
     def update_user_provided_peer(self, action: str, address: str) -> dict[str, Any]:
         """Add or remove one manually provided peer; Ouisync persists the list itself."""

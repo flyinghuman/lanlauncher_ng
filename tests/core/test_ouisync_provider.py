@@ -76,6 +76,58 @@ class OuisyncProviderTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 normalize(value)
 
+    def test_manual_nudge_relinks_only_the_selected_repository(self) -> None:
+        class Repository:
+            def __init__(self, info_hash):
+                self.info_hash = info_hash
+                self.sync_calls = []
+
+            async def get_info_hash(self):
+                return self.info_hash
+
+            async def is_sync_enabled(self):
+                return True
+
+            async def is_dht_enabled(self):
+                return False
+
+            async def set_sync_enabled(self, *, enabled):
+                self.sync_calls.append(enabled)
+
+            async def get_path(self):
+                return f"/{self.info_hash}"
+
+        class Session:
+            def __init__(self, repositories):
+                self.repositories = repositories
+                self.added = []
+
+            async def list_repositories(self):
+                return {repo.info_hash: repo for repo in self.repositories}
+
+            async def get_user_provided_peers(self):
+                return []
+
+            async def add_user_provided_peers(self, *, addrs):
+                self.added.append(list(addrs))
+
+        with tempfile.TemporaryDirectory() as temporary:
+            provider = self._provider(Path(temporary))
+            selected, other = Repository("abc"), Repository("def")
+            provider._session = Session([selected, other])
+            provider._network_peer_addrs = ("quic/10.0.0.1:1",)
+            provider.status = Mock(return_value=SyncStatus("ouisync", True, "running"))  # type: ignore[method-assign]
+            provider._submit = lambda coroutine, **_kwargs: asyncio.run(coroutine)  # type: ignore[method-assign]
+
+            result = provider.nudge_repository_sync("ABC")
+            missing = provider.nudge_repository_sync("zzz")
+
+            self.assertEqual(result["actions"], ["peers_readded", "sync_relinked"])
+            self.assertEqual(selected.sync_calls, [False, True])
+            self.assertEqual(other.sync_calls, [])
+            self.assertEqual(provider._session.added, [["quic/10.0.0.1:1"]])
+            self.assertEqual(missing["message"], "ouisync_repository_not_found")
+
     def test_user_provided_peer_add_and_remove_use_canonical_address(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             provider = self._provider(Path(temporary))

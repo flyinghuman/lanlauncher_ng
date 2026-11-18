@@ -783,5 +783,14 @@
   "ui.ouisync_peer_removed": "Peer entfernt",
   "ui.ouisync_peer_action_failed": "Peer konnte nicht aktualisiert werden",
   "status.error_ouisync_peer_address_invalid": "Bitte eine IP-Adresse mit Port eingeben, zum Beispiel 192.168.1.20:20209 oder quic/192.168.1.20:20209. Hostnamen werden nicht unterstützt.",
-  "status.error_ouisync_peer_action_invalid": "Die Peer-Aktion ist ungültig."
+  "status.error_ouisync_peer_action_invalid": "Die Peer-Aktion ist ungültig.",
+  "ui.ouisync_nudge_button": "Sync anstoßen",
+  "ui.ouisync_nudge_hint": "Trägt bekannte Peers erneut ein, startet die DHT-Suche neu und verbindet dieses Repository neu. LLNG macht das auch automatisch, wenn ein Repository nach 60 Sekunden noch keinen lokalen Block hat.",
+  "ui.ouisync_nudge_working": "Sync wird angestoßen …",
+  "ui.ouisync_nudge_done": "Sync angestoßen",
+  "ui.ouisync_nudge_failed": "Sync konnte nicht angestoßen werden",
+  "ui.ouisync_nudge_action_peers_readded": "bekannte Peers neu eingetragen",
+  "ui.ouisync_nudge_action_dht_lookup_restarted": "DHT-Suche neu gestartet",
+  "ui.ouisync_nudge_action_sync_relinked": "Repository neu verbunden",
+  "ui.ouisync_nudge_action_sync_enabled": "Sync eingeschaltet"
 }

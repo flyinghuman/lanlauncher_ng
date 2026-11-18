@@ -6074,7 +6074,9 @@ class Application:
             if not game_directory.is_relative_to(library_root):
                 return {"ok": False, "message": "ouisync_repository_game_id_unknown"}
             return method(info_hash, str(game_directory))
-        if action == "unmount":
+        if action == "nudge":
+            method = getattr(provider, "nudge_repository_sync", None)
+        elif action == "unmount":
             method = getattr(provider, "unmount_repository", None)
         elif action == "force-unmount":
             method = getattr(provider, "force_unmount_repository", None)

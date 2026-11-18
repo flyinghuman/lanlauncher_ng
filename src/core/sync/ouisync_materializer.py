@@ -12,7 +12,10 @@ import uuid
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Callable
 
-from src.core.sync.ouisync_repository import wait_until_repository_complete
+from src.core.sync.ouisync_repository import (
+    nudge_repository,
+    wait_until_repository_complete,
+)
 
 _MANIFEST_NAME = ".llng-materialized.json"
 _REPOSITORY_DIRECTORY = ".ouisync"
@@ -92,12 +95,24 @@ async def materialize_repository(
     stage.mkdir(parents=True)
     names: list[str] = []
     try:
+        logger = logging.getLogger(__name__)
+
+        async def nudge(attempt: int) -> None:
+            await nudge_repository(
+                session,
+                repository,
+                peer_addrs=tuple(peer_addrs) if isinstance(peer_addrs, (list, tuple)) else (),
+                relink=attempt >= 1,
+                logger=logger,
+            )
+
         entries, _sync_progress = await wait_until_repository_complete(
             repository,
             cancelled=cancelled,
             progress=progress,
             phase="downloading",
-            logger=logging.getLogger(__name__),
+            logger=logger,
+            nudge=nudge,
         )
 
         total = len(entries)

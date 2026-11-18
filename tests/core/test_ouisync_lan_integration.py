@@ -260,6 +260,11 @@ class OuisyncLanIntegrationTests(unittest.TestCase):
                     return None
 
                 self.assertTrue(owner._submit(seed_state()))
+                # A manual nudge (peers, DHT, sync off/on) keeps the seed usable.
+                nudged = owner.nudge_repository_sync(capability["info_hash"])
+                self.assertTrue(nudged["ok"], nudged)
+                self.assertIn("sync_relinked", nudged["actions"])
+                self.assertTrue(owner._submit(seed_state()))
                 client = make("client")
                 client.add_network_peers(
                     [
