@@ -76,6 +76,20 @@ class OuisyncLanIntegrationTests(unittest.TestCase):
                 providers.append(provider)
                 return provider
 
+            def read_mounted(provider, game_dir, name):
+                # Installs read LAN archives through a temporary read-only mount;
+                # materialization only syncs and never copies files to disk.
+                def read(mount: Path):
+                    path = mount / name
+                    return path.read_bytes() if path.is_file() else None
+
+                try:
+                    return provider.run_with_game_repository_mounted(
+                        access, str(game_dir / ".ouisync" / "demo"), read
+                    )
+                except Exception:  # noqa: BLE001 - not synced yet
+                    return None
+
             try:
                 owner = start("owner")
                 first = start("first-client")
@@ -125,7 +139,11 @@ class OuisyncLanIntegrationTests(unittest.TestCase):
                     paired_peer_addresses(first_capability, lan_address)
                 )
                 first_game = base / "first-client" / "library" / "demo"
-                self.assertTrue(first.start_game_materialization(access, str(first_game))[0])
+                self.assertTrue(
+                    first.start_game_materialization(
+                        access, str(first_game), str(first_game / ".ouisync" / "demo")
+                    )[0]
+                )
                 _wait(
                     lambda: any(
                         getattr(peer, "source", None)
@@ -144,14 +162,16 @@ class OuisyncLanIntegrationTests(unittest.TestCase):
                     timeout=30,
                 )
                 self.assertEqual(
-                    (first_game / ".ouisync" / "demo.tar.gz").read_bytes(),
+                    read_mounted(first, first_game, "demo.tar.gz"),
                     b"private LAN archive",
                 )
-                self.assertEqual(
-                    (first_game / ".ouisync" / "late-update.txt").read_text(encoding="utf-8"),
-                    "published after pairing",
+                _wait(
+                    lambda: read_mounted(first, first_game, "late-update.txt")
+                    == b"published after pairing",
+                    timeout=30,
                 )
                 self.assertFalse((first_game / "demo.tar.gz").exists())
+                self.assertFalse((first_game / ".ouisync" / "demo.tar.gz").exists())
 
                 third = start("third-client")
                 third_capability = pair_server_capabilities(
@@ -178,19 +198,93 @@ class OuisyncLanIntegrationTests(unittest.TestCase):
                 pairing_server.close()
                 pairing_server = None
                 third_game = base / "third-client" / "library" / "demo"
-                self.assertTrue(third.start_game_materialization(access, str(third_game))[0])
+                self.assertTrue(
+                    third.start_game_materialization(
+                        access, str(third_game), str(third_game / ".ouisync" / "demo")
+                    )[0]
+                )
                 _wait(
                     lambda: third.game_materialization_status("demo")["phase"] == "complete",
                     timeout=30,
                 )
                 self.assertEqual(
-                    (third_game / ".ouisync" / "demo.tar.gz").read_bytes(),
+                    read_mounted(third, third_game, "demo.tar.gz"),
                     b"private LAN archive",
                 )
                 self.assertFalse((third_game / "demo.tar.gz").exists())
             finally:
                 if pairing_server is not None:
                     pairing_server.close()
+                for provider in reversed(providers):
+                    provider.stop()
+
+
+    def test_lan_seed_stays_open_and_seeding_after_provider_restart(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        binary = _binary(root)
+        with tempfile.TemporaryDirectory(prefix="llng-ouisync-lan-restart-") as temporary:
+            base = Path(temporary)
+            providers: list[OuisyncSyncProvider] = []
+
+            def make(name: str) -> OuisyncSyncProvider:
+                provider = OuisyncSyncProvider(
+                    binary_path=str(binary),
+                    config_dir=str(base / name / "config"),
+                    log_path=str(base / name / "logs" / "ouisync.log"),
+                    repo_root=str(root),
+                    startup_timeout_seconds=20,
+                    request_timeout_seconds=10,
+                )
+                providers.append(provider)
+                status = provider.start()
+                self.assertTrue(status.running, status.last_error)
+                return provider
+
+            try:
+                owner = make("owner")
+                owner_game = base / "owner" / "library" / "demo"
+                (owner_game / ".ouisync").mkdir(parents=True)
+                (owner_game / ".ouisync" / "demo.tar.gz").write_bytes(b"archive")
+                seed = owner_game / ".ouisync" / "lan-repository"
+                capability = owner.publish_lan_game(str(owner_game), str(seed))
+
+                # Restart the same provider object, as Status -> restart does.
+                owner.stop()
+                self.assertTrue(owner.start().running)
+                owner.publish_lan_game(str(owner_game), str(seed))
+
+                async def seed_state():
+                    for repository in (await owner._session.list_repositories()).values():
+                        if str(await repository.get_info_hash()).lower() == capability["info_hash"]:
+                            return await repository.is_sync_enabled()
+                    return None
+
+                self.assertTrue(owner._submit(seed_state()))
+                client = make("client")
+                client.add_network_peers(
+                    [
+                        value.replace("0.0.0.0", "127.0.0.1")
+                        for value in owner.network_listener_addrs()
+                    ]
+                )
+                access = OuisyncRepositoryAccess(
+                    game_id="demo",
+                    read_token=capability["read_token"],
+                    expected_info_hash=capability["info_hash"],
+                    repository_namespace="lan-repository",
+                )
+                client_game = base / "client" / "library" / "demo"
+                self.assertTrue(
+                    client.start_game_materialization(
+                        access, str(client_game), str(client_game / ".ouisync" / "demo")
+                    )[0]
+                )
+                _wait(
+                    lambda: client.game_materialization_status("demo")["phase"] == "complete",
+                    timeout=30,
+                    details=lambda: client.game_materialization_status("demo"),
+                )
+            finally:
                 for provider in reversed(providers):
                     provider.stop()
 

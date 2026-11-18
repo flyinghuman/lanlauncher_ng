@@ -821,6 +821,67 @@ class OuisyncProviderTests(unittest.TestCase):
             self.assertIn(str(folder / ".ouisync"), session.directories)
             self.assertTrue((folder / ".ouisync").is_dir())
 
+    def test_startup_keeps_loaded_store_dirs_and_resets_publish_cache(self) -> None:
+        class Session:
+            def __init__(self, existing):
+                self.existing = existing
+                self.directories = None
+
+            async def get_store_dirs(self):
+                return list(self.existing)
+
+            async def set_store_dirs(self, *, paths):
+                self.directories = list(paths)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            provider = self._provider(Path(temporary))
+            lan_seed = Path(temporary, "library", "locallansync", ".ouisync")
+            game = Path(temporary, "library", "0ad", ".ouisync")
+            # Replacing the list would make Ouisync close these repositories.
+            session = Session([str(lan_seed), str(game)])
+            provider._session = session
+            provider._submit = lambda coroutine, **_kwargs: asyncio.run(coroutine)
+            provider._lan_publish_cache["stale"] = ("sig", {"token": "x"})
+
+            provider._initialize_store_dirs()
+
+            self.assertEqual(
+                sorted(session.directories),
+                sorted(
+                    str(path.resolve())
+                    for path in (lan_seed, game, Path(temporary, "config", "repositories"))
+                ),
+            )
+            self.assertEqual(provider._lan_publish_cache, {})
+
+    def test_lan_publication_registers_seed_directory(self) -> None:
+        class Session:
+            def __init__(self):
+                self.directories = []
+
+            async def set_store_dirs(self, *, paths):
+                self.directories = list(paths)
+
+        async def fake_publish(*_args, **_kwargs):
+            return {"read_token": "TOKEN", "info_hash": "abc"}
+
+        with tempfile.TemporaryDirectory() as temporary:
+            provider = self._provider(Path(temporary))
+            session = Session()
+            provider._session = session
+            provider._session_api = object()
+            provider._store_dirs = {Path(temporary, "config", "repositories")}
+            provider.status = Mock(return_value=SyncStatus("ouisync", True, "running"))
+            provider._submit = lambda coroutine, **_kwargs: asyncio.run(coroutine)
+            folder = Path(temporary) / "library" / "locallansync"
+            folder.mkdir(parents=True)
+            repository = folder / ".ouisync" / "lan-repository"
+
+            with patch.object(ouisync_provider_module, "publish_lan_game", fake_publish):
+                provider.publish_lan_game(str(folder), str(repository))
+
+            self.assertIn(str(repository.parent.resolve()), session.directories)
+
     def test_request_timeout_cancels_pending_async_operation(self) -> None:
         async def wait_until_cancelled() -> None:
             try:

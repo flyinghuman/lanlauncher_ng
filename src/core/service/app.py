@@ -1540,6 +1540,8 @@ class Application:
             read_token=access_data["catalog_token"],
             expected_info_hash=access_data["catalog_hash"],
             editable_files=(),
+            # The private LAN catalog must not be announced on the public DHT.
+            repository_namespace="lan-repository",
         )
         target = Path(self._effective_library_path()) / "locallansync"
         target.mkdir(parents=True, exist_ok=True)

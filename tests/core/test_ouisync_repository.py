@@ -11,6 +11,7 @@ from types import SimpleNamespace
 
 from src.core.sync.ouisync_repository import (
     copy_repository_assets,
+    ensure_repository_synced,
     game_repository_path,
     remove_repository_assets,
     run_with_repository_mount,
@@ -21,6 +22,17 @@ class _Repository:
     def __init__(self) -> None:
         self.sync_enabled = True
         self.unmounted = False
+        self.access_mode = 1
+        self.dht_enabled = True
+
+    async def get_access_mode(self) -> int:
+        return self.access_mode
+
+    async def is_dht_enabled(self) -> bool:
+        return self.dht_enabled
+
+    async def set_dht_enabled(self, *, enabled: bool) -> None:
+        self.dht_enabled = enabled
 
     async def get_info_hash(self) -> str:
         return "expected"
@@ -131,6 +143,47 @@ class OuisyncRepositoryTests(unittest.TestCase):
 
             self.assertFalse(session.repository.sync_enabled)
             self.assertFalse(session.repository.unmounted)
+
+    def test_hash_mismatch_never_pauses_this_devices_writable_seed(self) -> None:
+        class OwnSeed(_Repository):
+            async def get_info_hash(self) -> str:
+                return "own-lan-seed"
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            session = _Session(root / "mounts")
+            session.repository = OwnSeed()
+            session.repository.access_mode = 2
+            with self.assertRaisesRegex(ValueError, "info_hash_mismatch"):
+                asyncio.run(
+                    ensure_repository_synced(
+                        session=session,
+                        access=SimpleNamespace(
+                            read_token="other", expected_info_hash="expected"
+                        ),
+                        repository_path=root / "storage" / "demo",
+                    )
+                )
+            self.assertTrue(session.repository.sync_enabled)
+
+    def test_private_lan_repository_disables_dht_on_existing_replica(self) -> None:
+        for namespace, expected_dht in (("lan-repository", False), ("repository", True)):
+            with self.subTest(namespace=namespace), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                session = _Session(root / "mounts")
+                asyncio.run(
+                    ensure_repository_synced(
+                        session=session,
+                        access=SimpleNamespace(
+                            read_token="private",
+                            expected_info_hash="expected",
+                            repository_namespace=namespace,
+                        ),
+                        repository_path=root / "storage" / "demo",
+                    )
+                )
+                self.assertEqual(session.repository.dht_enabled, expected_dht)
+                self.assertEqual(session.created["dht_enabled"], expected_dht)
 
     def test_mount_is_unmounted_when_install_action_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

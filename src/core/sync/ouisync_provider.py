@@ -314,10 +314,7 @@ class OuisyncSyncProvider:
                                 self._session_api.connect(self._config_dir),
                                 timeout=min(2.0, self._request_timeout_seconds),
                             )
-                            store_dir = self._config_dir / "repositories"
-                            store_dir.mkdir(parents=True, exist_ok=True)
-                            self._store_dirs = {store_dir.resolve(strict=False)}
-                            self._set_store_dirs()
+                            self._initialize_store_dirs()
                             self._submit(
                                 self._session.bind_network(addrs=["quic/0.0.0.0:0"]),
                                 timeout=self._request_timeout_seconds,
@@ -847,6 +844,36 @@ class OuisyncSyncProvider:
         function = getattr(session, method)
         return self._submit(function(*args, **kwargs))
 
+    def _initialize_store_dirs(self) -> None:
+        """Adopt the store dirs Ouisync loaded at startup and add LLNG's own.
+
+        Ouisync closes every repository whose directory drops out of the store
+        list (``session_set_store_dirs``). Replacing the persisted list would
+        therefore close library repositories the CLI just reopened, such as LAN
+        seeds and installed games, until some LLNG flow touched them again.
+        """
+        session = self._session
+        if session is None:
+            raise RuntimeError("ouisync_session_unavailable")
+        store_dir = self._config_dir / "repositories"
+        store_dir.mkdir(parents=True, exist_ok=True)
+        get_store_dirs = getattr(session, "get_store_dirs", None)
+        existing = (
+            self._submit(get_store_dirs(), timeout=self._request_timeout_seconds)
+            if callable(get_store_dirs)
+            else []
+        )
+        with self._store_dirs_lock:
+            self._store_dirs = {
+                Path(str(path)).expanduser().resolve(strict=False)
+                for path in existing or []
+                if str(path).strip()
+            } | {store_dir.resolve(strict=False)}
+            self._set_store_dirs()
+        # A new session has no repositories opened by earlier publications.
+        with self._lan_publish_lock:
+            self._lan_publish_cache.clear()
+
     def _set_store_dirs(self) -> None:
         session = self._session
         if session is None:
@@ -1029,6 +1056,12 @@ class OuisyncSyncProvider:
                     f"{cache_key}\0{Path(repository_path).resolve(strict=False)}"
                 )
             signature = source_signature(folder_path)
+            # Register the seed's directory so Ouisync reopens it after a restart.
+            self._register_store_dir(
+                Path(repository_path).parent
+                if repository_path
+                else Path(folder_path) / ".ouisync"
+            )
             with self._lan_publish_lock:
                 cached = self._lan_publish_cache.get(cache_key)
                 if cached is not None and cached[0] == signature:

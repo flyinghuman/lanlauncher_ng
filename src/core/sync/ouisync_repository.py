@@ -217,10 +217,20 @@ async def ensure_repository_synced(
     expected_hash = str(getattr(access, "expected_info_hash", "") or "").lower()
     actual_hash = str(await repository.get_info_hash()).lower()
     if not expected_hash or actual_hash != expected_hash:
-        await repository.set_sync_enabled(enabled=False)
+        # A writable repository at this path is this device's own seed (for example
+        # a LAN server's lan-repository found after switching to client mode); never
+        # pause it because a different capability resolved to the same location.
+        if int(await repository.get_access_mode()) != 2:
+            await repository.set_sync_enabled(enabled=False)
         raise ValueError("ouisync_repository_info_hash_mismatch")
     if not await repository.is_sync_enabled():
         await repository.set_sync_enabled(enabled=True)
+    if (
+        getattr(access, "repository_namespace", "repository") != "repository"
+        and await repository.is_dht_enabled()
+    ):
+        # Private LAN repositories are found through paired peers only.
+        await repository.set_dht_enabled(enabled=False)
 
     peer_addrs = getattr(access, "peer_addrs", ())
     if isinstance(peer_addrs, (list, tuple)) and peer_addrs:

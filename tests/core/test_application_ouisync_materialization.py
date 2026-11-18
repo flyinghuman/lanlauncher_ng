@@ -434,6 +434,32 @@ class ApplicationOuisyncMaterializationTests(unittest.TestCase):
             manager.archive_path.assert_not_called()
 
 
+    def test_lan_catalog_is_joined_as_private_repository_without_dht(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            app = Application(AppConfig(bind_port=0, library_path=temporary))
+            self.addCleanup(app._server.server_close)
+            provider = Mock()
+            provider.game_materialization_status.return_value = {"phase": "idle"}
+            provider.start_game_materialization.return_value = (True, "started")
+            with (
+                patch.object(
+                    app,
+                    "_lan_pair_access_read",
+                    return_value={
+                        "catalog_token": "TOKEN",
+                        "catalog_hash": "abc",
+                        "peer_addrs": [],
+                    },
+                ),
+                patch.object(app, "_sync_provider_for_type", return_value=provider),
+                patch.object(app, "_effective_library_path", return_value=temporary),
+            ):
+                app._ouisync_lan_catalog_cycle()
+
+            access = provider.start_game_materialization.call_args.args[0]
+            self.assertEqual(access.game_id, "locallansync")
+            self.assertEqual(access.repository_namespace, "lan-repository")
+
     def test_ouisync_peer_action_routes_only_to_ouisync_provider(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             app = Application(AppConfig(bind_port=0, library_path=temporary))
